@@ -44,14 +44,10 @@ use sp_runtime::{
     Perbill,
 };
 
-use crate::{
-    self as pallet_chainbridge, 
-    traits::WeightInfo, 
-    types::{
+use crate::{self as pallet_chainbridge, traits::WeightInfo, types::{
         ChainId, 
         ResourceId
-    }
-};
+    }};
 
 
 // ----------------------------------------------------------------------------
@@ -108,7 +104,8 @@ pub(crate) const RELAYER_A: u64 = 0x2;
 pub(crate) const RELAYER_B: u64 = 0x3;
 pub(crate) const RELAYER_C: u64 = 0x4;
 pub(crate) const ENDOWED_BALANCE: u64 = 100_000_000;
-pub(crate) const TEST_THRESHOLD: u32 = 2;
+pub(crate) const DEFAULT_RELAYER_VOTE_THRESHOLD: u32 = 1;
+pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 
 
 // ----------------------------------------------------------------------------
@@ -195,8 +192,9 @@ impl pallet_balances::Config for MockRuntime {
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainBridgePalletId: PalletId = PalletId(*b"chnbrdge");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/brdge");
     pub const ProposalLifetime: u64 = 10;
+    pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
 
 // Implement chainbridge pallet configuration trait for the mock runtime
@@ -207,6 +205,7 @@ impl pallet_chainbridge::Config for MockRuntime {
     type PalletId = ChainBridgePalletId;
     type AdminOrigin = EnsureSignedBy<TestUserId, u64>;
     type ProposalLifetime = ProposalLifetime;
+    type RelayerVoteThreshold = RelayerVoteThreshold;
     type WeightInfo = MockWeightInfo;
 }
 
@@ -261,8 +260,8 @@ impl TestExternalitiesBuilder {
 
         externalities.execute_with(|| {
             // Set and check threshold
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD));
-            assert_eq!(ChainBridge::get_relayer_threshold(), TEST_THRESHOLD);
+            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD));
+            assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
             // Add relayers
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));

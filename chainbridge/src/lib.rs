@@ -83,7 +83,7 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-// Pallet types and traits
+// Pallet types, traits and constants
 pub mod types;
 mod traits;
 
@@ -132,14 +132,6 @@ use crate::{
 
 // Re-export pallet components in crate namespace (for runtime construction)
 pub use pallet::*;
-
-
-// ----------------------------------------------------------------------------
-// Constants definition
-// ----------------------------------------------------------------------------
-
-const DEFAULT_RELAYER_THRESHOLD: u32 = 1;
-
 
 // ----------------------------------------------------------------------------
 // Pallet module
@@ -204,6 +196,11 @@ pub mod pallet {
         #[pallet::constant]
         type ProposalLifetime: Get<Self::BlockNumber>;
 
+        /// Type for setting initial number of votes required for a proposal to be executed (see [RelayerVoteThreshold] in storage section).
+		#[pallet::constant]
+		type RelayerVoteThreshold: Get<u32>;
+
+
         /// Weight information for extrinsics in this pallet
         type WeightInfo: WeightInfo;
     }
@@ -262,16 +259,10 @@ pub mod pallet {
         OptionQuery
     >;
 
-    // Default (or initial) value for [`RelayerThreshold`] storage item
-	#[pallet::type_value]
-	pub fn OnRelayerThresholdEmpty<T: Config>() -> u32 {
-		DEFAULT_RELAYER_THRESHOLD
-	}
-
     /// Number of votes required for a proposal to execute
 	#[pallet::storage]
-	#[pallet::getter(fn get_relayer_threshold)]
-    pub(super) type RelayerThreshold<T: Config> = StorageValue<_, u32, ValueQuery, OnRelayerThresholdEmpty<T>>;
+	#[pallet::getter(fn get_threshold)]
+    pub(super) type RelayerVoteThreshold<T: Config> = StorageValue<_, u32, ValueQuery, <T as Config>::RelayerVoteThreshold>;
 
     /// Tracks current relayer set
 	#[pallet::storage]
@@ -612,7 +603,7 @@ impl<T: Config> Pallet<T> {
     /// Set a new voting threshold
     pub fn set_relayer_threshold(threshold: u32) -> DispatchResult {
         ensure!(threshold > 0, Error::<T>::InvalidThreshold);
-        <RelayerThreshold<T>>::put(threshold);
+        <RelayerVoteThreshold<T>>::put(threshold);
         Self::deposit_event(Event::RelayerThresholdChanged(threshold));
         Ok(())
     }
@@ -714,7 +705,7 @@ impl<T: Config> Pallet<T> {
             ensure!(!votes.is_complete(), Error::<T>::ProposalAlreadyComplete);
             ensure!(!votes.is_expired(now), Error::<T>::ProposalExpired);
 
-            let status = votes.try_to_complete(Self::get_relayer_threshold(), Self::get_relayer_count());
+            let status = votes.try_to_complete(Self::get_threshold(), Self::get_relayer_count());
             <Votes<T>>::insert(src_id, (nonce, prop.clone()), votes.clone());
 
             match status {

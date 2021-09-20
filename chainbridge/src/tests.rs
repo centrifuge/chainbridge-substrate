@@ -136,16 +136,16 @@ fn whitelist_chain() {
 #[test]
 fn set_get_threshold() {
     TestExternalitiesBuilder::default().build().execute_with(|| {
-        assert_eq!(<RelayerThreshold<MockRuntime>>::get(), 1);
+        assert_eq!(ChainBridge::get_threshold(), DEFAULT_RELAYER_VOTE_THRESHOLD);
 
-        assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD));
-        assert_eq!(<RelayerThreshold<MockRuntime>>::get(), TEST_THRESHOLD);
+        assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD));
+        assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
 
         assert_ok!(ChainBridge::set_threshold(Origin::root(), 5));
-        assert_eq!(<RelayerThreshold<MockRuntime>>::get(), 5);
+        assert_eq!(ChainBridge::get_threshold(), 5);
 
         assert_events(vec![
-            mock::Event::pallet_chainbridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(TEST_THRESHOLD)),
+            mock::Event::pallet_chainbridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(TEST_RELAYER_VOTE_THRESHOLD)),
             mock::Event::pallet_chainbridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(5))
         ]); 
     })
@@ -161,7 +161,7 @@ fn asset_transfer_success() {
         let amount = 100;
         let token_id = vec![1, 2, 3, 4];
 
-        assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD));
+        assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD));
 
         assert_ok!(ChainBridge::whitelist_chain(Origin::root(), dest_id.clone()));
         assert_ok!(ChainBridge::transfer_fungible(
@@ -245,7 +245,7 @@ fn asset_transfer_invalid_chain() {
 #[test]
 fn add_remove_relayer() {
     TestExternalitiesBuilder::default().build().execute_with(|| {
-        assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
+        assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD,));
         assert_eq!(ChainBridge::get_relayer_count(), 0);
 
         assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
