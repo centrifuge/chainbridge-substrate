@@ -16,39 +16,28 @@
 //! The main components implemented in this mock module is a mock runtime
 //! and some helper functions.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-use frame_support::{PalletId, parameter_types, traits::SortedMembers, weights::Weight};
+use frame_support::{parameter_types, traits::SortedMembers, weights::Weight, PalletId};
 
 use frame_system::EnsureRoot;
-use sp_core::{
-    hashing::blake2_128,
-    H256,
-};
+use sp_core::{hashing::blake2_128, H256};
 
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{
-        BlakeTwo256, 
-        IdentityLookup,
-    },
+    traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 
 use chainbridge::{
     constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
-    types::{ChainId, ResourceId}
+    types::{ChainId, ResourceId},
 };
 
-use crate::{
-    self as pallet_example,
-    traits::WeightInfo,
-};
-
+use crate::{self as pallet_example, traits::WeightInfo};
 
 // ----------------------------------------------------------------------------
 // Types and constants declaration
@@ -60,8 +49,6 @@ type Block = frame_system::mocking::MockBlock<MockRuntime>;
 // Implement testing extrinsic weights for the pallet
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
-
-
     fn transfer_hash() -> Weight {
         0 as Weight
     }
@@ -69,13 +56,13 @@ impl WeightInfo for MockWeightInfo {
     fn transfer_native() -> Weight {
         0 as Weight
     }
-    
+
     fn transfer_erc721() -> Weight {
         0 as Weight
     }
 
     fn transfer() -> Weight {
-        0 as Weight    
+        0 as Weight
     }
 
     fn remark() -> Weight {
@@ -93,7 +80,6 @@ pub(crate) const RELAYER_C: u64 = 0x4;
 pub(crate) const ENDOWED_BALANCE: u64 = 100_000_000;
 pub(crate) const TEST_THRESHOLD: u32 = 2;
 
-
 // ----------------------------------------------------------------------------
 // Mock runtime configuration
 // ----------------------------------------------------------------------------
@@ -107,7 +93,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
         ChainBridge: chainbridge::{Pallet, Call, Storage, Config, Event<T>},
         Erc721: pallet_example_erc721::{Pallet, Call, Storage, Event<T>},
         Example: pallet_example::{Pallet, Call, Event<T>}
@@ -119,7 +105,7 @@ parameter_types! {
     pub const TestUserId: u64 = 1;
 }
 
-impl SortedMembers<u64> for TestUserId{
+impl SortedMembers<u64> for TestUserId {
     fn sorted_members() -> Vec<u64> {
         vec![1]
     }
@@ -222,49 +208,44 @@ impl pallet_example::Config for MockRuntime {
     type WeightInfo = MockWeightInfo;
 }
 
-
 // ----------------------------------------------------------------------------
 // Test externalities
 // ----------------------------------------------------------------------------
 
 // Test externalities builder type declaraction.
 //
-// This type is mainly used for mocking storage in tests. It is the type alias 
+// This type is mainly used for mocking storage in tests. It is the type alias
 // for an in-memory, hashmap-based externalities implementation.
 pub struct TestExternalitiesBuilder {}
 
 // Default trait implementation for test externalities builder
 impl Default for TestExternalitiesBuilder {
-	fn default() -> Self {
-		Self {}
-	}
+    fn default() -> Self {
+        Self {}
+    }
 }
 
 impl TestExternalitiesBuilder {
-
     // Build a genesis storage key/value store
-	pub(crate) fn build(self) -> TestExternalities {
-
+    pub(crate) fn build(self) -> TestExternalities {
         let bridge_id = ChainBridge::account_id();
 
-		let mut storage = frame_system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<MockRuntime>()
             .unwrap();
 
         // pre-fill balances
         pallet_balances::GenesisConfig::<MockRuntime> {
-            balances: vec![
-                (bridge_id, ENDOWED_BALANCE),
-                (RELAYER_A, ENDOWED_BALANCE)
-            ],
-        }.assimilate_storage(&mut storage).unwrap();
+            balances: vec![(bridge_id, ENDOWED_BALANCE), (RELAYER_A, ENDOWED_BALANCE)],
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
 
         let mut externalities = TestExternalities::new(storage);
         externalities.execute_with(|| System::set_block_number(1));
         externalities
     }
 }
-
 
 // ----------------------------------------------------------------------------
 // Helper functions

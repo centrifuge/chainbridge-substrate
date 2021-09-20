@@ -13,14 +13,12 @@
 
 //! Traits used by the example ERC721 pallet.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
 // Frame, system and frame primitives
 use frame_support::weights::Weight;
-
 
 // ----------------------------------------------------------------------------
 // Traits declaration
@@ -29,12 +27,11 @@ use frame_support::weights::Weight;
 /// Weight information for example ERC721 pallet extrinsics
 ///
 /// Weights are calculated using runtime benchmarking features.
-/// See [`benchmarking`] module for more information. 
+/// See [`benchmarking`] module for more information.
 pub trait WeightInfo {
-
     fn mint() -> Weight;
 
     fn transfer() -> Weight;
-    
+
     fn burn() -> Weight;
 }

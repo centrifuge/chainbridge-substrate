@@ -13,26 +13,20 @@
 
 //! # Types used by the example ERC721 pallet
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
 // Substrate primitives
-use codec::{
-    Decode, 
-    Encode
-};
+use codec::{Decode, Encode};
 
 use sp_runtime::RuntimeDebug;
 
 use sp_core::U256;
 
-
 // ----------------------------------------------------------------------------
 // Types definition
 // ----------------------------------------------------------------------------
-
 
 pub type TokenId = U256;
 

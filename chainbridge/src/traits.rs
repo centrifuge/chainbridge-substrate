@@ -13,14 +13,12 @@
 
 //! Traits used by the Substrate/Ethereum chains bridging pallet.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
 // Frame, system and frame primitives
 use frame_support::weights::Weight;
-
 
 // ----------------------------------------------------------------------------
 // Traits declaration
@@ -29,13 +27,12 @@ use frame_support::weights::Weight;
 /// Weight information for pallet extrinsics
 ///
 /// Weights are calculated using runtime benchmarking features.
-/// See [`benchmarking`] module for more information. 
+/// See [`benchmarking`] module for more information.
 pub trait WeightInfo {
-
     fn set_threshold() -> Weight;
 
     fn set_resource() -> Weight;
-    
+
     fn remove_resource() -> Weight;
 
     fn whitelist_chain() -> Weight;

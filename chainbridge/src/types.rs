@@ -13,19 +13,14 @@
 
 //! Types used by the Substrate/Ethereum chains bridging pallet.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
 // Substrate primitives
-use codec::{
-    Decode, 
-    Encode
-};
+use codec::{Decode, Encode};
 
 use sp_runtime::RuntimeDebug;
-
 
 // ----------------------------------------------------------------------------
 // Types definition
