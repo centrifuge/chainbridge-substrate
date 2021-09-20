@@ -39,9 +39,9 @@ use sp_runtime::{
     Perbill,
 };
 
-use chainbridge::types::{
-    ChainId,
-    ResourceId,
+use chainbridge::{
+    constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
+    types::{ChainId, ResourceId}
 };
 
 use crate::{
@@ -182,6 +182,7 @@ parameter_types! {
     pub const MockChainId: ChainId = 5;
     pub const ChainBridgePalletId: PalletId = PalletId(*b"chnbrdge");
     pub const ProposalLifetime: u64 = 10;
+    pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
 
 // Implement chainbridge pallet configuration trait for the mock runtime
@@ -192,6 +193,7 @@ impl chainbridge::Config for MockRuntime {
     type PalletId = ChainBridgePalletId;
     type AdminOrigin = EnsureRoot<Self::AccountId>;
     type ProposalLifetime = ProposalLifetime;
+    type RelayerVoteThreshold = RelayerVoteThreshold;
     type WeightInfo = ();
 }
 

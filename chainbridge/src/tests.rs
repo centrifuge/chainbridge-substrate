@@ -20,6 +20,7 @@
 
 use crate::{
     self as pallet_chainbridge,
+    constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
     mock::*,
     *,
 };

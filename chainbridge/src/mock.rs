@@ -44,10 +44,11 @@ use sp_runtime::{
     Perbill,
 };
 
-use crate::{self as pallet_chainbridge, traits::WeightInfo, types::{
-        ChainId, 
-        ResourceId
-    }};
+use crate::{self as pallet_chainbridge,
+    constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
+    traits::WeightInfo,
+    types::{ChainId, ResourceId}
+};
 
 
 // ----------------------------------------------------------------------------
@@ -104,7 +105,6 @@ pub(crate) const RELAYER_A: u64 = 0x2;
 pub(crate) const RELAYER_B: u64 = 0x3;
 pub(crate) const RELAYER_C: u64 = 0x4;
 pub(crate) const ENDOWED_BALANCE: u64 = 100_000_000;
-pub(crate) const DEFAULT_RELAYER_VOTE_THRESHOLD: u32 = 1;
 pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 
 
