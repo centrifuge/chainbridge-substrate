@@ -139,10 +139,7 @@ pub use pallet::*;
 
 pub mod constants {
     pub const DEFAULT_RELAYER_VOTE_THRESHOLD: u32 = 1;
-};
-
-// Re-export constants
-pub use constants;
+}
 
 // ----------------------------------------------------------------------------
 // Pallet module
