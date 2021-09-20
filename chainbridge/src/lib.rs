@@ -139,7 +139,10 @@ pub use pallet::*;
 
 pub mod constants {
     pub const DEFAULT_RELAYER_VOTE_THRESHOLD: u32 = 1;
-}
+};
+
+// Re-export constants
+pub use constants;
 
 // ----------------------------------------------------------------------------
 // Pallet module
@@ -313,7 +316,6 @@ pub mod pallet {
         OptionQuery
     >;      
     
-
 	// ------------------------------------------------------------------------
 	// Pallet genesis configuration
 	// ------------------------------------------------------------------------
@@ -335,7 +337,6 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {}
 	}
-
 
     // ------------------------------------------------------------------------
     // Pallet lifecycle hooks
