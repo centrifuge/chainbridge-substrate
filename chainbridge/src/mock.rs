@@ -16,18 +16,11 @@
 //! The main components implemented in this mock module is a mock runtime
 //! and some helper functions.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-use frame_support::{
-    assert_ok, 
-    PalletId, 
-    parameter_types, 
-    traits::SortedMembers, 
-    weights::Weight
-};
+use frame_support::{assert_ok, parameter_types, traits::SortedMembers, weights::Weight, PalletId};
 
 use frame_system::EnsureSignedBy;
 
@@ -37,22 +30,16 @@ use sp_io::TestExternalities;
 
 use sp_runtime::{
     testing::Header,
-    traits::{
-        BlakeTwo256, 
-        IdentityLookup
-    },
+    traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 
 use crate::{
-    self as pallet_chainbridge, 
-    traits::WeightInfo, 
-    types::{
-        ChainId, 
-        ResourceId
-    }
+    self as pallet_chainbridge,
+    constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
+    traits::WeightInfo,
+    types::{ChainId, ResourceId},
 };
-
 
 // ----------------------------------------------------------------------------
 // Types and constants declaration
@@ -65,7 +52,6 @@ type Block = frame_system::mocking::MockBlock<MockRuntime>;
 // Implement testing extrinsic weights for the pallet
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
-
     fn set_threshold() -> Weight {
         0 as Weight
     }
@@ -73,13 +59,13 @@ impl WeightInfo for MockWeightInfo {
     fn set_resource() -> Weight {
         0 as Weight
     }
-    
+
     fn remove_resource() -> Weight {
         0 as Weight
     }
 
     fn whitelist_chain() -> Weight {
-        0 as Weight    
+        0 as Weight
     }
 
     fn add_relayer() -> Weight {
@@ -108,8 +94,7 @@ pub(crate) const RELAYER_A: u64 = 0x2;
 pub(crate) const RELAYER_B: u64 = 0x3;
 pub(crate) const RELAYER_C: u64 = 0x4;
 pub(crate) const ENDOWED_BALANCE: u64 = 100_000_000;
-pub(crate) const TEST_THRESHOLD: u32 = 2;
-
+pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 
 // ----------------------------------------------------------------------------
 // Mock runtime configuration
@@ -124,7 +109,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
         ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Config, Event<T>},
     }
 );
@@ -134,7 +119,7 @@ parameter_types! {
     pub const TestUserId: u64 = 1;
 }
 
-impl SortedMembers<u64> for TestUserId{
+impl SortedMembers<u64> for TestUserId {
     fn sorted_members() -> Vec<u64> {
         vec![1]
     }
@@ -195,8 +180,9 @@ impl pallet_balances::Config for MockRuntime {
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainBridgePalletId: PalletId = PalletId(*b"chnbrdge");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/brdge");
     pub const ProposalLifetime: u64 = 10;
+    pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
 
 // Implement chainbridge pallet configuration trait for the mock runtime
@@ -207,9 +193,9 @@ impl pallet_chainbridge::Config for MockRuntime {
     type PalletId = ChainBridgePalletId;
     type AdminOrigin = EnsureSignedBy<TestUserId, u64>;
     type ProposalLifetime = ProposalLifetime;
+    type RelayerVoteThreshold = RelayerVoteThreshold;
     type WeightInfo = MockWeightInfo;
 }
-
 
 // ----------------------------------------------------------------------------
 // Test externalities
@@ -217,34 +203,32 @@ impl pallet_chainbridge::Config for MockRuntime {
 
 // Test externalities builder type declaraction.
 //
-// This type is mainly used for mocking storage in tests. It is the type alias 
+// This type is mainly used for mocking storage in tests. It is the type alias
 // for an in-memory, hashmap-based externalities implementation.
 pub struct TestExternalitiesBuilder {}
 
 // Default trait implementation for test externalities builder
 impl Default for TestExternalitiesBuilder {
-	fn default() -> Self {
-		Self {}
-	}
+    fn default() -> Self {
+        Self {}
+    }
 }
 
 impl TestExternalitiesBuilder {
-        
     // Build a genesis storage key/value store
-	pub(crate) fn build(self) -> TestExternalities {
-
+    pub(crate) fn build(self) -> TestExternalities {
         let bridge_id = ChainBridge::account_id();
 
-		let mut storage = frame_system::GenesisConfig::default()
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<MockRuntime>()
             .unwrap();
 
         // pre-fill balances
         pallet_balances::GenesisConfig::<MockRuntime> {
-            balances: vec![
-                (bridge_id, ENDOWED_BALANCE),
-            ],
-        }.assimilate_storage(&mut storage).unwrap();
+            balances: vec![(bridge_id, ENDOWED_BALANCE)],
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
 
         let mut externalities = TestExternalities::new(storage);
         externalities.execute_with(|| System::set_block_number(1));
@@ -252,17 +236,20 @@ impl TestExternalitiesBuilder {
     }
 
     pub fn build_with(
-        self, 
+        self,
         src_id: ChainId,
         r_id: ResourceId,
-        resource: Vec<u8>
+        resource: Vec<u8>,
     ) -> TestExternalities {
         let mut externalities = Self::build(self);
 
         externalities.execute_with(|| {
             // Set and check threshold
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD));
-            assert_eq!(ChainBridge::get_relayer_threshold(), TEST_THRESHOLD);
+            assert_ok!(ChainBridge::set_threshold(
+                Origin::root(),
+                TEST_RELAYER_VOTE_THRESHOLD
+            ));
+            assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
             // Add relayers
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));
@@ -276,7 +263,6 @@ impl TestExternalitiesBuilder {
         externalities
     }
 }
-
 
 // ----------------------------------------------------------------------------
 // Helper functions

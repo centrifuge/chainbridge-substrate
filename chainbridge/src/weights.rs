@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 
 //! Extrinsincs weight information for Substrate/Ethereum chains bridging pallet.
-//! 
+//!
 //! Note that the following weights are used only for development.
 //! In fact, weights shoudl be calculated using runtime benchmarking.
 
@@ -24,7 +24,6 @@ use frame_support::weights::Weight;
 
 use crate::traits::WeightInfo;
 
-
 impl WeightInfo for () {
     fn set_threshold() -> Weight {
         195_000_000 as Weight
@@ -33,13 +32,13 @@ impl WeightInfo for () {
     fn set_resource() -> Weight {
         195_000_000 as Weight
     }
-    
+
     fn remove_resource() -> Weight {
         195_000_000 as Weight
     }
 
     fn whitelist_chain() -> Weight {
-        195_000_000 as Weight    
+        195_000_000 as Weight
     }
 
     fn add_relayer() -> Weight {

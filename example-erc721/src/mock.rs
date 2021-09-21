@@ -16,37 +16,23 @@
 //! The main components implemented in this mock module is a mock runtime
 //! and some helper functions.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-use frame_support::{
-    parameter_types, 
-    weights::Weight
-};
+use frame_support::{parameter_types, weights::Weight};
 
-use sp_core::{
-    blake2_128,
-    H256, 
-};
+use sp_core::{blake2_128, H256};
 
 use sp_io::TestExternalities;
 
 use sp_runtime::{
     testing::Header,
-    traits::{
-        BlakeTwo256, 
-        IdentityLookup
-    },
+    traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 
-use crate::{
-    self as pallet_example_erc721,
-    traits::WeightInfo, 
-};
-
+use crate::{self as pallet_example_erc721, traits::WeightInfo};
 
 // ----------------------------------------------------------------------------
 // Types and constants declaration
@@ -59,7 +45,6 @@ type Block = frame_system::mocking::MockBlock<MockRuntime>;
 // Implement testing extrinsic weights for the pallet
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
-
     fn mint() -> Weight {
         0 as Weight
     }
@@ -78,7 +63,6 @@ pub const USER_B: u64 = 0x2;
 pub const USER_C: u64 = 0x3;
 pub const ENDOWED_BALANCE: u64 = 100_000_000;
 
-
 // ----------------------------------------------------------------------------
 // Mock runtime configuration
 // ----------------------------------------------------------------------------
@@ -92,7 +76,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
         Erc721: pallet_example_erc721::{Pallet, Call, Storage, Event<T>},
     }
 );
@@ -161,39 +145,36 @@ impl pallet_example_erc721::Config for MockRuntime {
     type WeightInfo = MockWeightInfo;
 }
 
-
 // ----------------------------------------------------------------------------
 // Test externalities
 // ----------------------------------------------------------------------------
 
 // Test externalities builder type declaraction.
 //
-// This type is mainly used for mocking storage in tests. It is the type alias 
+// This type is mainly used for mocking storage in tests. It is the type alias
 // for an in-memory, hashmap-based externalities implementation.
 pub struct TestExternalitiesBuilder {}
 
 // Default trait implementation for test externalities builder
 impl Default for TestExternalitiesBuilder {
-	fn default() -> Self {
-		Self {}
-	}
+    fn default() -> Self {
+        Self {}
+    }
 }
 
 impl TestExternalitiesBuilder {
-        
     // Build a genesis storage key/value store
-	pub(crate) fn build(self) -> TestExternalities {
-
-		let mut storage = frame_system::GenesisConfig::default()
+    pub(crate) fn build(self) -> TestExternalities {
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<MockRuntime>()
             .unwrap();
 
         // pre-fill balances
         pallet_balances::GenesisConfig::<MockRuntime> {
-            balances: vec![
-                (USER_A, ENDOWED_BALANCE),
-            ],
-        }.assimilate_storage(&mut storage).unwrap();
+            balances: vec![(USER_A, ENDOWED_BALANCE)],
+        }
+        .assimilate_storage(&mut storage)
+        .unwrap();
 
         TestExternalities::new(storage)
     }

@@ -13,14 +13,12 @@
 
 //! Traits used by the example pallet.
 
-
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
 // Frame, system and frame primitives
 use frame_support::weights::Weight;
-
 
 // ----------------------------------------------------------------------------
 // Traits declaration
@@ -29,14 +27,12 @@ use frame_support::weights::Weight;
 /// Weight information for pallet extrinsics
 ///
 /// Weights are calculated using runtime benchmarking features.
-/// See [`benchmarking`] module for more information. 
+/// See [`benchmarking`] module for more information.
 pub trait WeightInfo {
-
-
     fn transfer_hash() -> Weight;
 
     fn transfer_native() -> Weight;
-    
+
     fn transfer_erc721() -> Weight;
 
     fn transfer() -> Weight;

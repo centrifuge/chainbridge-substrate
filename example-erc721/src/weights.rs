@@ -12,7 +12,7 @@
 // GNU General Public License for more details.
 
 //! Extrinsincs weight information for example ERC721 pallet.
-//! 
+//!
 //! Note that the following weights are used only for development.
 //! In fact, weights shoudl be calculated using runtime benchmarking.
 
@@ -24,9 +24,7 @@ use frame_support::weights::Weight;
 
 use crate::traits::WeightInfo;
 
-
 impl WeightInfo for () {
-
     fn mint() -> Weight {
         195_000_000 as Weight
     }
@@ -34,7 +32,7 @@ impl WeightInfo for () {
     fn transfer() -> Weight {
         195_000_000 as Weight
     }
-    
+
     fn burn() -> Weight {
         195_000_000 as Weight
     }

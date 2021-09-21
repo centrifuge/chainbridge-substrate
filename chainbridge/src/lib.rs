@@ -13,7 +13,7 @@
 
 //! # Pallet for bridging Polkadot Substrate and Ethereum chains.
 //!
-//! This pallet implement a general-purpose bridge to pass arbitrary messages 
+//! This pallet implement a general-purpose bridge to pass arbitrary messages
 //! Polkadot Substrate Chain and Ethereum or any other target network.
 //!
 //! - [`Config`]
@@ -24,7 +24,7 @@
 //! This pallet is used for bridging chains.
 //!
 //! ## Terminology
-//! 
+//!
 //! ## Usage
 //!
 //! ## Interface
@@ -45,7 +45,7 @@
 //! Callable functions (or extrinsics), also considered as transactions, materialize the
 //! pallet contract. Here's the callable functions implemented in this module:
 //!
-//! 
+//!
 //! ### Public Functions
 //!
 //! ## Genesis Configuration
@@ -60,17 +60,15 @@
 //!
 //! ## References
 //! - [Substrate FRAME v2 attribute macros](https://crates.parity.io/frame_support/attr.pallet.html).
-//! 
+//!
 //! ## Credits
 //! The Centrifugians Tribe <tribe@centrifuge.io>
 //!
 //! ## License
 //! GNU General Public License, Version 3, 29 June 2007 <https://www.gnu.org/licenses/gpl-3.0.html>
 
-
 // Ensure we're `no_std` when compiling for WebAssembly.
 #![cfg_attr(not(feature = "std"), no_std)]
-
 
 // ----------------------------------------------------------------------------
 // Module imports and re-exports
@@ -83,9 +81,10 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-// Pallet types and traits
-pub mod types;
+// Pallet modules
+pub mod constants;
 mod traits;
+pub mod types;
 
 // Pallet extrinsics weight information
 mod weights;
@@ -96,50 +95,26 @@ use codec::EncodeLike;
 use frame_support::{
     dispatch::DispatchResult,
     ensure,
-    PalletId,
-    traits::{
-        EnsureOrigin, 
-        Get,
-    },
+    traits::{EnsureOrigin, Get},
     weights::GetDispatchInfo,
-    Parameter,
+    PalletId, Parameter,
 };
 
-use frame_system::{
-    ensure_root, 
-    ensure_signed
-};
+use frame_system::{ensure_root, ensure_signed};
 
 use sp_core::U256;
 
-use sp_runtime::traits::{
-    AccountIdConversion, 
-    Dispatchable
-};
+use sp_runtime::traits::{AccountIdConversion, Dispatchable};
 
 use sp_std::prelude::*;
 
 use crate::{
     traits::WeightInfo,
-    types::{
-        ChainId, 
-        DepositNonce,
-        ProposalStatus,
-        ProposalVotes,
-        ResourceId,
-    }
+    types::{ChainId, DepositNonce, ProposalStatus, ProposalVotes, ResourceId},
 };
 
 // Re-export pallet components in crate namespace (for runtime construction)
 pub use pallet::*;
-
-
-// ----------------------------------------------------------------------------
-// Constants definition
-// ----------------------------------------------------------------------------
-
-const DEFAULT_RELAYER_THRESHOLD: u32 = 1;
-
 
 // ----------------------------------------------------------------------------
 // Pallet module
@@ -148,7 +123,7 @@ const DEFAULT_RELAYER_THRESHOLD: u32 = 1;
 // Chain bridge pallet module
 //
 // The name of the pallet is provided by `construct_runtime` and is used as
-// the unique identifier for the pallet's storage. It is not defined in the 
+// the unique identifier for the pallet's storage. It is not defined in the
 // pallet itself.
 #[frame_support::pallet]
 pub mod pallet {
@@ -165,7 +140,6 @@ pub mod pallet {
     #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
-
     // ------------------------------------------------------------------------
     // Pallet configuration
     // ------------------------------------------------------------------------
@@ -173,21 +147,23 @@ pub mod pallet {
     /// Chain bridge pallet's configuration trait.
     ///
     /// Associated types and constants are declared in this trait. If the pallet
-    /// depends on other super-traits, the latter must be added to this trait, 
-    /// such as, in this case, [`chainbridge::Config`] super-trait, for instance. 
+    /// depends on other super-traits, the latter must be added to this trait,
+    /// such as, in this case, [`chainbridge::Config`] super-trait, for instance.
     /// Note that [`frame_system::Config`] must always be included.
     #[pallet::config]
     pub trait Config: frame_system::Config {
-
         /// Associated type for Event enum
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
         /// Origin used to administer the pallet
         type AdminOrigin: EnsureOrigin<Self::Origin>;
-        
+
         /// Proposed dispatchable call
-        type Proposal: Parameter + Dispatchable<Origin = Self::Origin> + EncodeLike + GetDispatchInfo;
-        
+        type Proposal: Parameter
+            + Dispatchable<Origin = Self::Origin>
+            + EncodeLike
+            + GetDispatchInfo;
+
         /// The identifier for this chain.
         /// This must be unique and must not collide with existing IDs within a set of bridged chains.
         #[pallet::constant]
@@ -196,7 +172,7 @@ pub mod pallet {
         /// Constant configuration parameter to store the module identifier for the pallet.
         ///
         /// The module identifier may be of the form ```PalletId(*b"chnbrdge")``` and set
-        /// using the [`parameter_types`](https://substrate.dev/docs/en/knowledgebase/runtime/macros#parameter_types) 
+        /// using the [`parameter_types`](https://substrate.dev/docs/en/knowledgebase/runtime/macros#parameter_types)
         // macro in the [`runtime/lib.rs`] file.
         #[pallet::constant]
         type PalletId: Get<PalletId>;
@@ -204,10 +180,13 @@ pub mod pallet {
         #[pallet::constant]
         type ProposalLifetime: Get<Self::BlockNumber>;
 
+        /// Type for setting initial number of votes required for a proposal to be executed (see [RelayerVoteThreshold] in storage section).
+        #[pallet::constant]
+        type RelayerVoteThreshold: Get<u32>;
+
         /// Weight information for extrinsics in this pallet
         type WeightInfo: WeightInfo;
     }
-
 
     // ------------------------------------------------------------------------
     // Pallet events
@@ -246,53 +225,36 @@ pub mod pallet {
         ProposalFailed(ChainId, DepositNonce),
     }
 
-
     // ------------------------------------------------------------------------
     // Pallet storage items
     // ------------------------------------------------------------------------
 
     /// All whitelisted chains and their respective transaction counts
-	#[pallet::storage]
-	#[pallet::getter(fn get_chains)]
-	pub(super) type ChainNonces<T: Config> = StorageMap<
-        _, 
-        Blake2_256, 
-        ChainId, 
-        DepositNonce, 
-        OptionQuery
-    >;
-
-    // Default (or initial) value for [`RelayerThreshold`] storage item
-	#[pallet::type_value]
-	pub fn OnRelayerThresholdEmpty<T: Config>() -> u32 {
-		DEFAULT_RELAYER_THRESHOLD
-	}
+    #[pallet::storage]
+    #[pallet::getter(fn get_chains)]
+    pub(super) type ChainNonces<T: Config> =
+        StorageMap<_, Blake2_256, ChainId, DepositNonce, OptionQuery>;
 
     /// Number of votes required for a proposal to execute
-	#[pallet::storage]
-	#[pallet::getter(fn get_relayer_threshold)]
-    pub(super) type RelayerThreshold<T: Config> = StorageValue<_, u32, ValueQuery, OnRelayerThresholdEmpty<T>>;
+    #[pallet::storage]
+    #[pallet::getter(fn get_threshold)]
+    pub(super) type RelayerVoteThreshold<T: Config> =
+        StorageValue<_, u32, ValueQuery, <T as Config>::RelayerVoteThreshold>;
 
     /// Tracks current relayer set
-	#[pallet::storage]
-	#[pallet::getter(fn get_relayers)]
-    pub(super) type Relayers<T: Config> = StorageMap<
-        _,
-        Blake2_256,
-        T::AccountId,
-        bool,
-        ValueQuery
-    >;
+    #[pallet::storage]
+    #[pallet::getter(fn get_relayers)]
+    pub(super) type Relayers<T: Config> = StorageMap<_, Blake2_256, T::AccountId, bool, ValueQuery>;
 
     /// Number of relayers in set
-	#[pallet::storage]
-	#[pallet::getter(fn get_relayer_count)]
-	pub(super) type RelayerCount<T: Config> = StorageValue<_, u32, ValueQuery>;
+    #[pallet::storage]
+    #[pallet::getter(fn get_relayer_count)]
+    pub(super) type RelayerCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
     /// All known proposals.
     /// The key is the hash of the call and the deposit ID, to ensure it's unique.
-	#[pallet::storage]
-	#[pallet::getter(fn get_votes)]
+    #[pallet::storage]
+    #[pallet::getter(fn get_votes)]
     pub(super) type Votes<T: Config> = StorageDoubleMap<
         _,
         Blake2_256,
@@ -300,51 +262,43 @@ pub mod pallet {
         Blake2_256,
         (DepositNonce, T::Proposal),
         ProposalVotes<T::AccountId, T::BlockNumber>,
-        OptionQuery
+        OptionQuery,
     >;
-    
+
     /// Utilized by the bridge software to map resource IDs to actual methods
-	#[pallet::storage]
-	#[pallet::getter(fn get_resources)]
-    pub(super) type Resources<T: Config> = StorageMap<
-        _,
-        Blake2_256,
-        ResourceId,
-        Vec<u8>,
-        OptionQuery
-    >;      
-    
+    #[pallet::storage]
+    #[pallet::getter(fn get_resources)]
+    pub(super) type Resources<T: Config> =
+        StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
 
-	// ------------------------------------------------------------------------
-	// Pallet genesis configuration
-	// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // Pallet genesis configuration
+    // ------------------------------------------------------------------------
 
-	// The genesis configuration type.
-	#[pallet::genesis_config]
-	pub struct GenesisConfig {}
+    // The genesis configuration type.
+    #[pallet::genesis_config]
+    pub struct GenesisConfig {}
 
-	// The default value for the genesis config type.
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self {}
-		}
-	}
+    // The default value for the genesis config type.
+    #[cfg(feature = "std")]
+    impl Default for GenesisConfig {
+        fn default() -> Self {
+            Self {}
+        }
+    }
 
-	// The build of genesis for the pallet.
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
-		fn build(&self) {}
-	}
-
+    // The build of genesis for the pallet.
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+        fn build(&self) {}
+    }
 
     // ------------------------------------------------------------------------
     // Pallet lifecycle hooks
     // ------------------------------------------------------------------------
-    
-    #[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
+    #[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
     // ------------------------------------------------------------------------
     // Pallet errors
@@ -384,20 +338,18 @@ pub mod pallet {
         ProposalExpired,
     }
 
+    // ------------------------------------------------------------------------
+    // Pallet dispatchable functions
+    // ------------------------------------------------------------------------
 
-	// ------------------------------------------------------------------------
-	// Pallet dispatchable functions
-	// ------------------------------------------------------------------------
-
-	// Declare Call struct and implement dispatchable (or callable) functions.
-	//
-	// Dispatchable functions are transactions modifying the state of the chain. They
-	// are also called extrinsics are constitute the pallet's public interface.
-	// Note that each parameter used in functions must implement `Clone`, `Debug`,
-	// `Eq`, `PartialEq` and `Codec` traits.
-	#[pallet::call]
-	impl<T: Config> Pallet<T> {
-
+    // Declare Call struct and implement dispatchable (or callable) functions.
+    //
+    // Dispatchable functions are transactions modifying the state of the chain. They
+    // are also called extrinsics are constitute the pallet's public interface.
+    // Note that each parameter used in functions must implement `Clone`, `Debug`,
+    // `Eq`, `PartialEq` and `Codec` traits.
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
         /// Sets the vote threshold for proposals.
         ///
         /// This threshold is used to determine how many votes are required
@@ -407,10 +359,7 @@ pub mod pallet {
         /// - O(1) lookup and insert
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_threshold())]
-        pub fn set_threshold(
-            origin: OriginFor<T>,
-            threshold: u32
-        ) -> DispatchResult {
+        pub fn set_threshold(origin: OriginFor<T>, threshold: u32) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::set_relayer_threshold(threshold)
         }
@@ -423,8 +372,8 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_resource())]
         pub fn set_resource(
             origin: OriginFor<T>,
-            id: ResourceId, 
-            method: Vec<u8>
+            id: ResourceId,
+            method: Vec<u8>,
         ) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::register_resource(id, method)
@@ -439,10 +388,7 @@ pub mod pallet {
         /// - O(1) removal
         /// # </weight>
         #[pallet::weight(<T as Config>::WeightInfo::remove_resource())]
-        pub fn remove_resource(
-            origin: OriginFor<T>,
-            id: ResourceId
-        ) -> DispatchResult {
+        pub fn remove_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::unregister_resource(id)
         }
@@ -453,10 +399,7 @@ pub mod pallet {
         /// - O(1) lookup and insert
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::whitelist_chain())]
-        pub fn whitelist_chain(
-            origin: OriginFor<T>,
-            id: ChainId
-        ) -> DispatchResult {
+        pub fn whitelist_chain(origin: OriginFor<T>, id: ChainId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::whitelist(id)
         }
@@ -467,10 +410,7 @@ pub mod pallet {
         /// - O(1) lookup and insert
         /// # </weight>
         #[pallet::weight(<T as Config>::WeightInfo::add_relayer())]
-        pub fn add_relayer(
-            origin: OriginFor<T>,
-            v: T::AccountId
-        ) -> DispatchResult {
+        pub fn add_relayer(origin: OriginFor<T>, v: T::AccountId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::register_relayer(v)
         }
@@ -481,10 +421,7 @@ pub mod pallet {
         /// - O(1) lookup and removal
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_relayer())]
-        pub fn remove_relayer(
-            origin: OriginFor<T>,
-            account_id: T::AccountId
-        ) -> DispatchResult {
+        pub fn remove_relayer(origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::unregister_relayer(account_id)
         }
@@ -500,15 +437,21 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::acknowledge_proposal(call.get_dispatch_info().weight))]
         pub fn acknowledge_proposal(
             origin: OriginFor<T>,
-            nonce: DepositNonce, 
-            src_id: ChainId, 
-            r_id: ResourceId, 
-            call: Box<<T as Config>::Proposal>
+            nonce: DepositNonce,
+            src_id: ChainId,
+            r_id: ResourceId,
+            call: Box<<T as Config>::Proposal>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(Self::is_relayer(&who), Error::<T>::MustBeRelayer);
-            ensure!(Self::chain_whitelisted(src_id), Error::<T>::ChainNotWhitelisted);
-            ensure!(Self::resource_exists(r_id), Error::<T>::ResourceDoesNotExist);
+            ensure!(
+                Self::chain_whitelisted(src_id),
+                Error::<T>::ChainNotWhitelisted
+            );
+            ensure!(
+                Self::resource_exists(r_id),
+                Error::<T>::ResourceDoesNotExist
+            );
 
             Self::vote_for(who, nonce, src_id, call)
         }
@@ -521,15 +464,21 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::reject_proposal())]
         pub fn reject_proposal(
             origin: OriginFor<T>,
-            nonce: DepositNonce, 
-            src_id: ChainId, 
-            r_id: ResourceId, 
-            call: Box<<T as Config>::Proposal>
+            nonce: DepositNonce,
+            src_id: ChainId,
+            r_id: ResourceId,
+            call: Box<<T as Config>::Proposal>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
             ensure!(Self::is_relayer(&who), Error::<T>::MustBeRelayer);
-            ensure!(Self::chain_whitelisted(src_id), Error::<T>::ChainNotWhitelisted);
-            ensure!(Self::resource_exists(r_id), Error::<T>::ResourceDoesNotExist);
+            ensure!(
+                Self::chain_whitelisted(src_id),
+                Error::<T>::ChainNotWhitelisted
+            );
+            ensure!(
+                Self::resource_exists(r_id),
+                Error::<T>::ResourceDoesNotExist
+            );
 
             Self::vote_against(who, nonce, src_id, call)
         }
@@ -545,9 +494,9 @@ pub mod pallet {
         #[pallet::weight(<T as pallet::Config>::WeightInfo::eval_vote_state(proposal.get_dispatch_info().weight))]
         pub fn eval_vote_state(
             origin: OriginFor<T>,
-            nonce: DepositNonce, 
-            src_id: ChainId, 
-            proposal: Box<<T as Config>::Proposal>
+            nonce: DepositNonce,
+            src_id: ChainId,
+            proposal: Box<<T as Config>::Proposal>,
         ) -> DispatchResult {
             ensure_signed(origin)?;
 
@@ -555,7 +504,6 @@ pub mod pallet {
         }
     }
 } // end of 'pallet' module
-
 
 // ----------------------------------------------------------------------------
 // Pallet implementation block
@@ -573,9 +521,9 @@ impl<T: Config> Pallet<T> {
 
     /// Provides an AccountId for the pallet.
     /// This is used both as an origin check and deposit/withdrawal account.
-	pub fn account_id() -> T::AccountId {
-		T::PalletId::get().into_account()
-	}
+    pub fn account_id() -> T::AccountId {
+        T::PalletId::get().into_account()
+    }
 
     pub fn ensure_admin(o: T::Origin) -> DispatchResult {
         T::AdminOrigin::try_origin(o)
@@ -588,7 +536,6 @@ impl<T: Config> Pallet<T> {
     pub fn is_relayer(who: &T::AccountId) -> bool {
         Self::get_relayers(who)
     }
-
 
     /// Asserts if a resource is registered
     pub fn resource_exists(id: ResourceId) -> bool {
@@ -612,7 +559,7 @@ impl<T: Config> Pallet<T> {
     /// Set a new voting threshold
     pub fn set_relayer_threshold(threshold: u32) -> DispatchResult {
         ensure!(threshold > 0, Error::<T>::InvalidThreshold);
-        <RelayerThreshold<T>>::put(threshold);
+        <RelayerVoteThreshold<T>>::put(threshold);
         Self::deposit_event(Event::RelayerThresholdChanged(threshold));
         Ok(())
     }
@@ -714,7 +661,7 @@ impl<T: Config> Pallet<T> {
             ensure!(!votes.is_complete(), Error::<T>::ProposalAlreadyComplete);
             ensure!(!votes.is_expired(now), Error::<T>::ProposalExpired);
 
-            let status = votes.try_to_complete(Self::get_relayer_threshold(), Self::get_relayer_count());
+            let status = votes.try_to_complete(Self::get_threshold(), Self::get_relayer_count());
             <Votes<T>>::insert(src_id, (nonce, prop.clone()), votes.clone());
 
             match status {
@@ -820,7 +767,7 @@ impl<T: Config> Pallet<T> {
     pub fn transfer_generic(
         dest_id: ChainId,
         resource_id: ResourceId,
-        metadata: Vec<u8>
+        metadata: Vec<u8>,
     ) -> DispatchResult {
         ensure!(
             Self::chain_whitelisted(dest_id),
