@@ -235,7 +235,7 @@ impl TestExternalitiesBuilder {
         externalities
     }
 
-    pub fn build_with(
+    pub(crate) fn build_with(
         self,
         src_id: ChainId,
         r_id: ResourceId,
