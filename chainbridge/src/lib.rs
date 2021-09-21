@@ -81,7 +81,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-// Pallet types, traits and constants
+// Pallet modules
+pub mod constants;
 mod traits;
 pub mod types;
 
@@ -114,16 +115,6 @@ use crate::{
 
 // Re-export pallet components in crate namespace (for runtime construction)
 pub use pallet::*;
-
-// ----------------------------------------------------------------------------
-// Constants declaration
-// ----------------------------------------------------------------------------
-
-pub mod constants {
-    pub const DEFAULT_RELAYER_VOTE_THRESHOLD: u32 = 1;
-}
-
-pub use constants::*;
 
 // ----------------------------------------------------------------------------
 // Pallet module
