@@ -271,13 +271,6 @@ pub mod pallet {
     pub(super) type Resources<T: Config> =
         StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
 
-    // // ------------------------------------------------------------------------
-    // // Pallet lifecycle hooks
-    // // ------------------------------------------------------------------------
-
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
     // ------------------------------------------------------------------------
     // Pallet errors
     // ------------------------------------------------------------------------
