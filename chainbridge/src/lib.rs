@@ -272,28 +272,6 @@ pub mod pallet {
         StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
 
     // // ------------------------------------------------------------------------
-    // // Pallet genesis configuration
-    // // ------------------------------------------------------------------------
-
-    // // The genesis configuration type.
-    // #[pallet::genesis_config]
-    // pub struct GenesisConfig {}
-
-    // // The default value for the genesis config type.
-    // #[cfg(feature = "std")]
-    // impl Default for GenesisConfig {
-    //     fn default() -> Self {
-    //         Self {}
-    //     }
-    // }
-
-    // // The build of genesis for the pallet.
-    // #[pallet::genesis_build]
-    // impl<T: Config> GenesisBuild<T> for GenesisConfig {
-    //     fn build(&self) {}
-    // }
-
-    // // ------------------------------------------------------------------------
     // // Pallet lifecycle hooks
     // // ------------------------------------------------------------------------
 
