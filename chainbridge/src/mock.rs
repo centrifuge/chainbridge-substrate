@@ -110,7 +110,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Config, Event<T>},
+        ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -180,7 +180,7 @@ impl pallet_balances::Config for MockRuntime {
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/brdge");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"chnbridg");
     pub const ProposalLifetime: u64 = 10;
     pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
@@ -235,7 +235,7 @@ impl TestExternalitiesBuilder {
         externalities
     }
 
-    pub fn build_with(
+    pub(crate) fn build_with(
         self,
         src_id: ChainId,
         r_id: ResourceId,
@@ -282,4 +282,9 @@ pub fn assert_events(mut expected: Vec<Event>) {
         let next = actual.pop().expect("event expected");
         assert_eq!(next, evt.into(), "Events don't match (actual,expected)");
     }
+}
+
+// Build a dummy proposal for testing
+pub fn make_proposal(r: Vec<u8>) -> Call {
+    Call::System(frame_system::Call::remark(r))
 }

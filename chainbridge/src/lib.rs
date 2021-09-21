@@ -74,17 +74,16 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
+// Pallet modules
+pub mod constants;
+mod traits;
+pub mod types;
 // Mock runtime and unit test cases
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
-
-// Pallet modules
-pub mod constants;
-mod traits;
-pub mod types;
 
 // Pallet extrinsics weight information
 mod weights;
@@ -269,34 +268,19 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_resources)]
     pub(super) type Resources<T: Config> =
-        StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
+    StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
 
     // ------------------------------------------------------------------------
-    // Pallet genesis configuration
+    // Pallet hooks
     // ------------------------------------------------------------------------
 
-    // The genesis configuration type.
-    #[pallet::genesis_config]
-    pub struct GenesisConfig {}
-
-    // The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl Default for GenesisConfig {
-        fn default() -> Self {
-            Self {}
-        }
-    }
-
-    // The build of genesis for the pallet.
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
-        fn build(&self) {}
-    }
-
-    // ------------------------------------------------------------------------
-    // Pallet lifecycle hooks
-    // ------------------------------------------------------------------------
-
+    // FIXME (ToZ):
+    // This pallet does not compile without this optional hooks section. Weird
+    // as this section is optional (i.e. the same as the one below is automatically
+    // generated if none is given (according to the FRAME documentation). Must 
+    // investigate further.
+    //
+    // See https://crates.parity.io/frame_support/attr.pallet.html#hooks-pallethooks-optional)
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 

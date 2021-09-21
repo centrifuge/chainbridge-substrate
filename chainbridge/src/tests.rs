@@ -339,10 +339,6 @@ fn add_remove_relayer() {
         })
 }
 
-fn make_proposal(r: Vec<u8>) -> mock::Call {
-    mock::Call::System(frame_system::Call::remark(r))
-}
-
 #[test]
 fn create_sucessful_proposal() {
     let src_id: ChainId = 1;

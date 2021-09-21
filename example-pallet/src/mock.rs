@@ -94,7 +94,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        ChainBridge: chainbridge::{Pallet, Call, Storage, Config, Event<T>},
+        ChainBridge: chainbridge::{Pallet, Call, Storage, Event<T>},
         Erc721: pallet_example_erc721::{Pallet, Call, Storage, Event<T>},
         Example: pallet_example::{Pallet, Call, Event<T>}
     }

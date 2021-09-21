@@ -151,28 +151,6 @@ pub mod pallet {
     pub(super) type TokenCount<T: Config> = StorageValue<_, U256, ValueQuery, OnTokenCountEmpty<T>>;
 
     // ------------------------------------------------------------------------
-    // Pallet genesis configuration
-    // ------------------------------------------------------------------------
-
-    // The genesis configuration type.
-    #[pallet::genesis_config]
-    pub struct GenesisConfig {}
-
-    // The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl Default for GenesisConfig {
-        fn default() -> Self {
-            Self {}
-        }
-    }
-
-    // The build of genesis for the pallet.
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
-        fn build(&self) {}
-    }
-
-    // ------------------------------------------------------------------------
     // Pallet lifecycle hooks
     // ------------------------------------------------------------------------
 
