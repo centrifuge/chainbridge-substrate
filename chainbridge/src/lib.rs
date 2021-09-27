@@ -34,11 +34,46 @@
 //! Signed origin is valid.
 //!
 //! ### Types
-//!
+//! Event - Associated type for Event enum
+//! AdminOrigin - Origin used for pallet administration
+//! Proposal - Proposed dispatchable call
+//! ChainId - The identifier for this chain (a constant). This must be unique and must not collide with existing IDs within a set of bridged chains.
+//! PalletId - Identifier of the pallet (a constant).
+//! ProposalLifetime -
+//! RelayerVoteThreshold - Initial number of votes required for a proposal to be executed (see [RelayerVoteThreshold] in storage section).
+//! WeightInfo- Weight information for extrinsics in this pallet.
+
 //! ### Events
-//!
+//! RelayerThresholdChanged(u32) - The relayer's vote threshold has been modified (new_threshold).
+//! ChainWhitelisted(ChainId) - Chain now available for transfers (chain_id).
+//! RelayerAdded(T::AccountId) - A new relayer was added to the brige.
+//! RelayerRemoved(T::AccountId) - A relayer was removed from the bridge.
+//! FungibleTransfer(ChainId, DepositNonce, ResourceId, U256, Vec<u8>) - A fungible asset was relayed.
+//! NonFungibleTransfer(ChainId, DepositNonce, ResourceId, Vec<u8>, Vec<u8>, Vec<u8>) - A non-fungible token is transfered.
+//! GenericTransfer(ChainId, DepositNonce, ResourceId, Vec<u8>) - Generic asset is transfered.
+//! VoteFor(ChainId, DepositNonce, T::AccountId) - Vote submitted in favour of proposal
+//! VoteAgainst(ChainId, DepositNonce, T::AccountId) - Vote submitted against proposal
+//! ProposalApproved(ChainId, DepositNonce) - Voting successful for a proposal
+//! ProposalRejected(ChainId, DepositNonce) - Voting rejected a proposal
+//! ProposalSucceeded(ChainId, DepositNonce) - Execution of call succeeded
+//! ProposalFailed(ChainId, DepositNonce) - Execution of call failed
 //!
 //! ### Errors
+//! `ThresholdNotSet - The relayer's vote threshold is not set
+//! `InvalidThreshold` - The relayer's vote threshold cannot be zero
+//! `InvalidChainId` - The provided chain Id is not valid
+//! `ChainNotWhitelisted` - Interactions with this chain is not permitted
+//! `ChainAlreadyWhitelisted - Chain has already been enabled
+//! `ResourceDoesNotExist` - Resource ID provided isn't mapped to anything
+//! `RelayerAlreadyExists` - Relayer already in set
+//! `RelayerInvalid` - Provided accountId is not a relayer
+//! `MustBeRelayer` - Protected operation, must be performed by relayer
+//! `RelayerAlreadyVoted` - Relayer has already submitted some vote for this proposal
+//! `ProposalAlreadyExists` - A proposal with these parameters has already been submitted
+//! `ProposalDoesNotExist` - No proposal with the ID was found
+//! `ProposalNotComplete` - Cannot complete proposal, needs more votes
+//! `ProposalAlreadyComplete` - Proposal has either failed or succeeded
+//! `ProposalExpired` - Lifetime of proposal has been exceeded
 //!
 //! ### Dispatchable Functions
 //!
@@ -49,12 +84,10 @@
 //! ### Public Functions
 //!
 //! ## Genesis Configuration
-//! This pallet depends on the [`GenesisConfig`]. The following fields are added to
-//! the genesis configuration, that are not associated with specific storage values:
+//! This pallet does not depends on the [`GenesisConfig`].
 //!
 //! ## Related Pallets
 //! This pallet is tightly coupled to the following pallets:
-//! - Substrate FRAME's [`balances` pallet](https://github.com/paritytech/substrate/tree/master/frame/balances).
 //! - Centrifuge Chain [`bridge` pallet](https://github.com/centrifuge/centrifuge-chain/tree/master/pallets/bridge).
 //! - Centrifuge Chain [`bridge_mapping` pallet](https://github.com/centrifuge/centrifuge-chain/tree/master/pallets/bridge-mapping).
 //!
@@ -74,21 +107,20 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-// Pallet modules
-pub mod constants;
-mod traits;
-pub mod types;
-// Mock runtime and unit test cases
+// Declare crate mocking and testing modules
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
 
-// Pallet extrinsics weight information
+// Declare crate component modules
+mod constants;
+mod traits;
+mod types;
 mod weights;
 
-// Substrate primitives
+// Import Substrate modules
 use codec::EncodeLike;
 
 use frame_support::{
@@ -99,7 +131,7 @@ use frame_support::{
     PalletId, Parameter,
 };
 
-use frame_system::{ensure_root, ensure_signed};
+use frame_system::{ensure_root, ensure_signed, RawOrigin as SystemOrigin};
 
 use sp_core::U256;
 
@@ -107,10 +139,10 @@ use sp_runtime::traits::{AccountIdConversion, Dispatchable};
 
 use sp_std::prelude::*;
 
-use crate::{
-    traits::WeightInfo,
-    types::{ChainId, DepositNonce, ProposalStatus, ProposalVotes, ResourceId},
-};
+// Re-export crate types and constants, and some traits
+pub use constants::*;
+pub use traits::WeightInfo;
+pub use types::*;
 
 // Re-export pallet components in crate namespace (for runtime construction)
 pub use pallet::*;
@@ -146,15 +178,14 @@ pub mod pallet {
     /// Chain bridge pallet's configuration trait.
     ///
     /// Associated types and constants are declared in this trait. If the pallet
-    /// depends on other super-traits, the latter must be added to this trait,
-    /// such as, in this case, [`chainbridge::Config`] super-trait, for instance.
-    /// Note that [`frame_system::Config`] must always be included.
+    /// depends on other super-traits, the latter must be added to this config
+    /// trait. Note that [`frame_system::Config`] must always be included.
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// Associated type for Event enum
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-        /// Origin used to administer the pallet
+        /// Origin used for pallet administration
         type AdminOrigin: EnsureOrigin<Self::Origin>;
 
         /// Proposed dispatchable call
@@ -268,21 +299,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_resources)]
     pub(super) type Resources<T: Config> =
-    StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
-
-    // ------------------------------------------------------------------------
-    // Pallet hooks
-    // ------------------------------------------------------------------------
-
-    // FIXME (ToZ):
-    // This pallet does not compile without this optional hooks section. Weird
-    // as this section is optional (i.e. the same as the one below is automatically
-    // generated if none is given (according to the FRAME documentation). Must 
-    // investigate further.
-    //
-    // See https://crates.parity.io/frame_support/attr.pallet.html#hooks-pallethooks-optional)
-    #[pallet::hooks]
-    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+        StorageMap<_, Blake2_256, ResourceId, Vec<u8>, OptionQuery>;
 
     // ------------------------------------------------------------------------
     // Pallet errors
@@ -483,7 +500,6 @@ pub mod pallet {
             proposal: Box<<T as Config>::Proposal>,
         ) -> DispatchResult {
             ensure_signed(origin)?;
-
             Self::try_resolve_proposal(nonce, src_id, proposal)
         }
     }
@@ -501,7 +517,7 @@ pub mod pallet {
 // - Private functions: These are private helpers or utilities that cannot be called
 //   from other pallets.
 impl<T: Config> Pallet<T> {
-    // *** Utility methods ***
+    // Public immutables and private mutables functions
 
     /// Provides an AccountId for the pallet.
     /// This is used both as an origin check and deposit/withdrawal account.
@@ -596,7 +612,7 @@ impl<T: Config> Pallet<T> {
         Ok(())
     }
 
-    // *** Proposal voting and execution methods ***
+    // Proposal voting and execution methods
 
     /// Commits a vote for a proposal. If the proposal doesn't exist it will be created.
     fn commit_vote(
@@ -688,9 +704,10 @@ impl<T: Config> Pallet<T> {
         call: Box<T::Proposal>,
     ) -> DispatchResult {
         Self::deposit_event(Event::ProposalApproved(src_id, nonce));
-        call.dispatch(frame_system::RawOrigin::Signed(Self::account_id()).into())
-            .map(|_| ())
-            .map_err(|e| e.error)?;
+
+        // The dispatch origin for this call must be signed
+        let origin = SystemOrigin::Signed(Self::account_id()).into();
+        call.dispatch(origin).map(|_| ()).map_err(|e| e.error)?;
         Self::deposit_event(Event::ProposalSucceeded(src_id, nonce));
         Ok(())
     }
@@ -777,7 +794,7 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
     fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
         let bridge_id = T::PalletId::get().into_account();
         o.into().and_then(|o| match o {
-            frame_system::RawOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
+            SystemOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
             r => Err(T::Origin::from(r)),
         })
     }
