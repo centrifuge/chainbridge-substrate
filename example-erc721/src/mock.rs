@@ -129,8 +129,10 @@ impl pallet_balances::Config for MockRuntime {
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
+    type MaxReserves = ();
+    type ReserveIdentifier = ();
     type MaxLocks = ();
+    type WeightInfo = ();
 }
 
 // Parameterize ERC721 pallet

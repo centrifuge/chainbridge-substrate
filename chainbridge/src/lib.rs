@@ -115,9 +115,9 @@ mod mock;
 mod tests;
 
 // Declare crate component modules
-mod constants;
+pub mod constants;
 mod traits;
-mod types;
+pub mod types;
 mod weights;
 
 // Import Substrate modules
