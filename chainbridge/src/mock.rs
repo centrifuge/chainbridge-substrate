@@ -23,7 +23,7 @@
 // Import crate types, traits and constants
 use crate::{
     self as pallet_chainbridge, constants::DEFAULT_RELAYER_VOTE_THRESHOLD, ChainId,
-    Config as ChainbridgePalletConfig, ResourceId, WeightInfo,
+    Config as ChainBridgePalletConfig, ResourceId, WeightInfo,
 };
 
 // Import Substrate primitives and components
@@ -119,7 +119,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Chainbridge: pallet_chainbridge::{Pallet, Call, Storage, Event<T>},
+        ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -191,17 +191,17 @@ impl pallet_balances::Config for MockRuntime {
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainbridgePalletId: PalletId = PalletId(*b"cb/bridg");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/bridg");
     pub const ProposalLifetime: u64 = 10;
     pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
 
 // Implement chainbridge pallet configuration trait for the mock runtime
-impl ChainbridgePalletConfig for MockRuntime {
+impl ChainBridgePalletConfig for MockRuntime {
     type Event = Event;
     type Proposal = Call;
     type ChainId = MockChainId;
-    type PalletId = ChainbridgePalletId;
+    type PalletId = ChainBridgePalletId;
     type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type ProposalLifetime = ProposalLifetime;
     type RelayerVoteThreshold = RelayerVoteThreshold;
@@ -228,7 +228,7 @@ impl Default for TestExternalitiesBuilder {
 impl TestExternalitiesBuilder {
     // Build a genesis storage key/value store
     pub(crate) fn build(self) -> TestExternalities {
-        let bridge_id = Chainbridge::account_id();
+        let bridge_id = ChainBridge::account_id();
 
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<MockRuntime>()
@@ -257,20 +257,17 @@ impl TestExternalitiesBuilder {
 
         externalities.execute_with(|| {
             // Set and check threshold
-            assert_ok!(Chainbridge::set_threshold(
-                Origin::root(),
-                TEST_RELAYER_VOTE_THRESHOLD
-            ));
-            assert_eq!(Chainbridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
+            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD));
+            assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
             // Add relayers
-            assert_ok!(Chainbridge::add_relayer(Origin::root(), RELAYER_A));
-            assert_ok!(Chainbridge::add_relayer(Origin::root(), RELAYER_B));
-            assert_ok!(Chainbridge::add_relayer(Origin::root(), RELAYER_C));
+            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
+            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));
+            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_C));
             // Whitelist chain
-            assert_ok!(Chainbridge::whitelist_chain(Origin::root(), src_id));
+            assert_ok!(ChainBridge::whitelist_chain(Origin::root(), src_id));
             // Set and check resource ID mapped to some junk data
-            assert_ok!(Chainbridge::set_resource(Origin::root(), r_id, resource));
-            assert_eq!(Chainbridge::resource_exists(r_id), true);
+            assert_ok!(ChainBridge::set_resource(Origin::root(), r_id, resource));
+            assert_eq!(ChainBridge::resource_exists(r_id), true);
         });
 
         externalities

@@ -94,7 +94,7 @@ frame_support::construct_runtime!(
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Chainbridge: chainbridge::{Pallet, Call, Storage, Event<T>},
+        ChainBridge: chainbridge::{Pallet, Call, Storage, Event<T>},
         Erc721: pallet_example_erc721::{Pallet, Call, Storage, Event<T>},
         Example: pallet_example::{Pallet, Call, Event<T>}
     }
@@ -168,7 +168,7 @@ impl pallet_balances::Config for MockRuntime {
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainbridgePalletId: PalletId = PalletId(*b"cb/bridg");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/bridg");
     pub const ProposalLifetime: u64 = 10;
     pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
@@ -178,7 +178,7 @@ impl chainbridge::Config for MockRuntime {
     type Event = Event;
     type Proposal = Call;
     type ChainId = MockChainId;
-    type PalletId = ChainbridgePalletId;
+    type PalletId = ChainBridgePalletId;
     type AdminOrigin = EnsureRoot<Self::AccountId>;
     type ProposalLifetime = ProposalLifetime;
     type RelayerVoteThreshold = RelayerVoteThreshold;
@@ -230,7 +230,7 @@ impl Default for TestExternalitiesBuilder {
 impl TestExternalitiesBuilder {
     // Build a genesis storage key/value store
     pub(crate) fn build(self) -> TestExternalities {
-        let bridge_id = Chainbridge::account_id();
+        let bridge_id = ChainBridge::account_id();
 
         let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<MockRuntime>()
