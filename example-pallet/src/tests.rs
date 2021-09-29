@@ -17,7 +17,15 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-use crate::{self as pallet_example, mock::*, *};
+use super::*;
+use crate::{
+    self as pallet_example,
+    mock::{
+        helpers::*, Balances, ChainBridge, Erc721, Erc721Id, Example, HashId,
+        MockRuntime, NativeTokenId, Origin, ProposalLifetime, TestExternalitiesBuilder,
+        ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C, TEST_RELAYER_VOTE_THRESHOLD,
+    },
+};
 
 use codec::Encode;
 
@@ -26,20 +34,6 @@ use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
 use sp_core::{blake2_256, H256};
 
 use pallet_example_erc721::types::Erc721Token;
-
-// ----------------------------------------------------------------------------
-// Helper functions
-// ----------------------------------------------------------------------------
-
-fn make_remark_proposal(hash: H256) -> mock::Call {
-    let resource_id = HashId::get();
-    mock::Call::Example(crate::Call::remark(hash, resource_id))
-}
-
-fn make_transfer_proposal(to: u64, amount: u64) -> mock::Call {
-    let resource_id = HashId::get();
-    mock::Call::Example(crate::Call::transfer(to, amount.into(), resource_id))
-}
 
 // ----------------------------------------------------------------------------
 // Test cases
@@ -54,7 +48,10 @@ fn transfer_hash() {
             let resource_id = HashId::get();
             let hash: H256 = "ABC".using_encoded(blake2_256).into();
 
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
+            assert_ok!(ChainBridge::set_threshold(
+                Origin::root(),
+                TEST_RELAYER_VOTE_THRESHOLD,
+            ));
 
             assert_ok!(ChainBridge::whitelist_chain(
                 Origin::root(),
@@ -139,6 +136,7 @@ fn transfer_erc721() {
                 Origin::root(),
                 dest_chain.clone()
             ));
+
             assert_ok!(Example::transfer_erc721(
                 Origin::signed(RELAYER_A),
                 recipient.clone(),
@@ -183,7 +181,10 @@ fn execute_remark() {
             let r_id = chainbridge::derive_resource_id(src_id, b"hash");
             let resource = b"Example.remark".to_vec();
 
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
+            assert_ok!(ChainBridge::set_threshold(
+                Origin::root(),
+                TEST_RELAYER_VOTE_THRESHOLD
+            ));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));
             assert_ok!(ChainBridge::whitelist_chain(Origin::root(), src_id));
@@ -252,9 +253,13 @@ fn transfer() {
             assert_eq!(Balances::free_balance(&bridge_id), ENDOWED_BALANCE - 10);
             assert_eq!(Balances::free_balance(RELAYER_A), ENDOWED_BALANCE + 10);
 
-            assert_events(vec![mock::Event::pallet_balances(
-                pallet_balances::Event::Transfer(ChainBridge::account_id(), RELAYER_A, 10),
-            )]);
+            assert_events(vec![
+                mock::Event::Balances(pallet_balances::Event::Transfer(
+                    ChainBridge::account_id(),
+                    RELAYER_A,
+                    10,
+                )),
+            ]);
         })
 }
 
@@ -311,7 +316,10 @@ fn create_sucessful_transfer_proposal() {
             let resource = b"Example.transfer".to_vec();
             let proposal = make_transfer_proposal(RELAYER_A, 10);
 
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
+            assert_ok!(ChainBridge::set_threshold(
+                Origin::root(),
+                TEST_RELAYER_VOTE_THRESHOLD
+            ));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_C));
@@ -376,18 +384,18 @@ fn create_sucessful_transfer_proposal() {
             );
 
             assert_events(vec![
-                mock::Event::chainbridge(chainbridge::Event::VoteFor(src_id, prop_id, RELAYER_A)),
-                mock::Event::chainbridge(chainbridge::Event::VoteAgainst(
+                mock::Event::ChainBridge(chainbridge::Event::VoteFor(src_id, prop_id, RELAYER_A)),
+                mock::Event::ChainBridge(chainbridge::Event::VoteAgainst(
                     src_id, prop_id, RELAYER_B,
                 )),
-                mock::Event::chainbridge(chainbridge::Event::VoteFor(src_id, prop_id, RELAYER_C)),
-                mock::Event::chainbridge(chainbridge::Event::ProposalApproved(src_id, prop_id)),
-                mock::Event::pallet_balances(pallet_balances::Event::Transfer(
+                mock::Event::ChainBridge(chainbridge::Event::VoteFor(src_id, prop_id, RELAYER_C)),
+                mock::Event::ChainBridge(chainbridge::Event::ProposalApproved(src_id, prop_id)),
+                mock::Event::Balances(pallet_balances::Event::Transfer(
                     ChainBridge::account_id(),
                     RELAYER_A,
                     10,
                 )),
-                mock::Event::chainbridge(chainbridge::Event::ProposalSucceeded(src_id, prop_id)),
+                mock::Event::ChainBridge(chainbridge::Event::ProposalSucceeded(src_id, prop_id)),
             ]);
         })
 }

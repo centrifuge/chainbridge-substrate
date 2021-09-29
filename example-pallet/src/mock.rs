@@ -20,7 +20,9 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-use frame_support::{parameter_types, traits::SortedMembers, weights::Weight, PalletId};
+use crate::{self as pallet_example, traits::WeightInfo, Config as PalletExampleConfig};
+
+use frame_support::{PalletId, parameter_types, traits::{Everything, SortedMembers}, weights::Weight};
 
 use frame_system::EnsureRoot;
 use sp_core::{hashing::blake2_128, H256};
@@ -36,8 +38,6 @@ use chainbridge::{
     constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
     types::{ChainId, ResourceId},
 };
-
-use crate::{self as pallet_example, traits::WeightInfo};
 
 // ----------------------------------------------------------------------------
 // Types and constants declaration
@@ -78,7 +78,7 @@ pub(crate) const RELAYER_A: u64 = 0x2;
 pub(crate) const RELAYER_B: u64 = 0x3;
 pub(crate) const RELAYER_C: u64 = 0x4;
 pub(crate) const ENDOWED_BALANCE: u64 = 100_000_000;
-pub(crate) const TEST_THRESHOLD: u32 = 2;
+pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 
 // ----------------------------------------------------------------------------
 // Mock runtime configuration
@@ -122,7 +122,7 @@ parameter_types! {
 
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
-    type BaseCallFilter = ();
+    type BaseCallFilter = Everything;
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
@@ -159,14 +159,16 @@ impl pallet_balances::Config for MockRuntime {
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
     type MaxLocks = ();
+    type MaxReserves = ();
+    type ReserveIdentifier = ();
+    type WeightInfo = ();
 }
 
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainBridgePalletId: PalletId = PalletId(*b"chnbrdge");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/bridg");
     pub const ProposalLifetime: u64 = 10;
     pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
@@ -198,7 +200,7 @@ impl pallet_example_erc721::Config for MockRuntime {
 }
 
 // Implement example pallet configuration trait for the mock runtime
-impl pallet_example::Config for MockRuntime {
+impl PalletExampleConfig for MockRuntime {
     type Event = Event;
     type BridgeOrigin = chainbridge::EnsureBridge<MockRuntime>;
     type Currency = Balances;
@@ -251,46 +253,61 @@ impl TestExternalitiesBuilder {
 // Helper functions
 // ----------------------------------------------------------------------------
 
-fn last_event() -> Event {
-    frame_system::Pallet::<MockRuntime>::events()
-        .pop()
-        .map(|e| e.event)
-        .expect("Event expected")
-}
+pub(crate) mod helpers {
 
-pub fn expect_event<E: Into<Event>>(e: E) {
-    assert_eq!(last_event(), e.into());
-}
+    use super::{Call, Event, HashId, MockRuntime, H256};
 
-// Asserts that the event was emitted at some point.
-pub fn event_exists<E: Into<Event>>(e: E) {
-    let actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
-        .iter()
-        .map(|e| e.event.clone())
-        .collect();
-    let e: Event = e.into();
-    let mut exists = false;
-    for evt in actual {
-        if evt == e {
-            exists = true;
-            break;
+    fn last_event() -> Event {
+        frame_system::Pallet::<MockRuntime>::events()
+            .pop()
+            .map(|e| e.event)
+            .expect("Event expected")
+    }
+
+    pub fn expect_event<E: Into<Event>>(e: E) {
+        assert_eq!(last_event(), e.into());
+    }
+
+    // Asserts that the event was emitted at some point.
+    pub fn event_exists<E: Into<Event>>(e: E) {
+        let actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
+            .iter()
+            .map(|e| e.event.clone())
+            .collect();
+        let e: Event = e.into();
+        let mut exists = false;
+        for evt in actual {
+            if evt == e {
+                exists = true;
+                break;
+            }
+        }
+        assert!(exists);
+    }
+
+    // Checks events against the latest. A contiguous set of events must be provided. They must
+    // include the most recent event, but do not have to include every past event.
+    pub fn assert_events(mut expected: Vec<Event>) {
+        let mut actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
+            .iter()
+            .map(|e| e.event.clone())
+            .collect();
+
+        expected.reverse();
+
+        for evt in expected {
+            let next = actual.pop().expect("event expected");
+            assert_eq!(next, evt.into(), "Events don't match");
         }
     }
-    assert!(exists);
-}
 
-// Checks events against the latest. A contiguous set of events must be provided. They must
-// include the most recent event, but do not have to include every past event.
-pub fn assert_events(mut expected: Vec<Event>) {
-    let mut actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
-        .iter()
-        .map(|e| e.event.clone())
-        .collect();
-
-    expected.reverse();
-
-    for evt in expected {
-        let next = actual.pop().expect("event expected");
-        assert_eq!(next, evt.into(), "Events don't match");
+    pub(crate) fn make_remark_proposal(hash: H256) -> Call {
+        let resource_id = HashId::get();
+        Call::Example(crate::Call::remark(hash, resource_id))
     }
-}
+
+    pub(crate) fn make_transfer_proposal(to: u64, amount: u64) -> Call {
+        let resource_id = HashId::get();
+        Call::Example(crate::Call::transfer(to, amount.into(), resource_id))
+    }
+} // end of 'helpers' module

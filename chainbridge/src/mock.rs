@@ -20,9 +20,21 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
-use frame_support::{assert_ok, parameter_types, traits::SortedMembers, weights::Weight, PalletId};
+// Import crate types, traits and constants
+use crate::{
+    self as pallet_chainbridge, constants::DEFAULT_RELAYER_VOTE_THRESHOLD, ChainId,
+    Config as ChainBridgePalletConfig, ResourceId, WeightInfo,
+};
 
-use frame_system::EnsureSignedBy;
+// Import Substrate primitives and components
+use frame_support::{
+    assert_ok, parameter_types,
+    traits::{Everything, SortedMembers},
+    weights::Weight,
+    PalletId,
+};
+
+use frame_system::mocking::{MockBlock, MockUncheckedExtrinsic};
 
 use sp_core::H256;
 
@@ -34,20 +46,17 @@ use sp_runtime::{
     Perbill,
 };
 
-use crate::{
-    self as pallet_chainbridge,
-    constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
-    traits::WeightInfo,
-    types::{ChainId, ResourceId},
-};
-
 // ----------------------------------------------------------------------------
 // Types and constants declaration
 // ----------------------------------------------------------------------------
 
 type Balance = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MockRuntime>;
-type Block = frame_system::mocking::MockBlock<MockRuntime>;
+
+// Runtime mocking types definition
+type UncheckedExtrinsic = MockUncheckedExtrinsic<MockRuntime>;
+type Block = MockBlock<MockRuntime>;
+
+pub type SystemCall = frame_system::Call<MockRuntime>;
 
 // Implement testing extrinsic weights for the pallet
 pub struct MockWeightInfo;
@@ -109,7 +118,7 @@ frame_support::construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Event<T>},
     }
 );
@@ -136,7 +145,7 @@ parameter_types! {
 
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
-    type BaseCallFilter = ();
+    type BaseCallFilter = Everything;
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
@@ -173,25 +182,27 @@ impl pallet_balances::Config for MockRuntime {
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
-    type WeightInfo = ();
     type MaxLocks = ();
+    type MaxReserves = ();
+    type ReserveIdentifier = ();
+    type WeightInfo = ();
 }
 
 // Parameterize chainbridge pallet
 parameter_types! {
     pub const MockChainId: ChainId = 5;
-    pub const ChainBridgePalletId: PalletId = PalletId(*b"chnbridg");
+    pub const ChainBridgePalletId: PalletId = PalletId(*b"cb/bridg");
     pub const ProposalLifetime: u64 = 10;
     pub const RelayerVoteThreshold: u32 = DEFAULT_RELAYER_VOTE_THRESHOLD;
 }
 
 // Implement chainbridge pallet configuration trait for the mock runtime
-impl pallet_chainbridge::Config for MockRuntime {
+impl ChainBridgePalletConfig for MockRuntime {
     type Event = Event;
     type Proposal = Call;
     type ChainId = MockChainId;
     type PalletId = ChainBridgePalletId;
-    type AdminOrigin = EnsureSignedBy<TestUserId, u64>;
+    type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
     type ProposalLifetime = ProposalLifetime;
     type RelayerVoteThreshold = RelayerVoteThreshold;
     type WeightInfo = MockWeightInfo;
@@ -235,6 +246,7 @@ impl TestExternalitiesBuilder {
         externalities
     }
 
+    // Build a genesis storage with a pre-configured chainbridge
     pub(crate) fn build_with(
         self,
         src_id: ChainId,
@@ -245,10 +257,7 @@ impl TestExternalitiesBuilder {
 
         externalities.execute_with(|| {
             // Set and check threshold
-            assert_ok!(ChainBridge::set_threshold(
-                Origin::root(),
-                TEST_RELAYER_VOTE_THRESHOLD
-            ));
+            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD));
             assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
             // Add relayers
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
@@ -260,6 +269,7 @@ impl TestExternalitiesBuilder {
             assert_ok!(ChainBridge::set_resource(Origin::root(), r_id, resource));
             assert_eq!(ChainBridge::resource_exists(r_id), true);
         });
+
         externalities
     }
 }
@@ -268,23 +278,23 @@ impl TestExternalitiesBuilder {
 // Helper functions
 // ----------------------------------------------------------------------------
 
-// Checks events against the latest. A contiguous set of events must be provided. They must
-// include the most recent event, but do not have to include every past event.
-pub fn assert_events(mut expected: Vec<Event>) {
-    let mut actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
-        .iter()
-        .map(|e| e.event.clone())
-        .collect();
+pub mod helpers {
 
-    expected.reverse();
+    use super::{Event, MockRuntime};
 
-    for evt in expected {
-        let next = actual.pop().expect("event expected");
-        assert_eq!(next, evt.into(), "Events don't match (actual,expected)");
+    // Checks events against the latest. A contiguous set of events must be provided. They must
+    // include the most recent event, but do not have to include every past event.
+    pub fn assert_events(mut expected: Vec<Event>) {
+        let mut actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
+            .iter()
+            .map(|e| e.event.clone())
+            .collect();
+
+        expected.reverse();
+
+        for evt in expected {
+            let next = actual.pop().expect("event expected");
+            assert_eq!(next, evt.into(), "Events don't match (actual,expected)");
+        }
     }
-}
-
-// Build a dummy proposal for testing
-pub fn make_proposal(r: Vec<u8>) -> Call {
-    Call::System(frame_system::Call::remark(r))
-}
+} // end of 'helpers' inner module
