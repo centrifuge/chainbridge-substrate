@@ -32,12 +32,12 @@ std = [
 	"sp-runtime/std",
     "sp-io/std",
     "sp-core/std",
+    "frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
 ]
 
 runtime-benchmarks = [
-	"frame-system/runtime-benchmarks",
-	"frame-support/runtime-benchmarks"
+	"frame-benchmarking",
 ]
