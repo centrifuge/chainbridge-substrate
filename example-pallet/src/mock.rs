@@ -22,7 +22,12 @@
 
 use crate::{self as pallet_example, traits::WeightInfo, Config as PalletExampleConfig};
 
-use frame_support::{PalletId, parameter_types, traits::{Everything, SortedMembers}, weights::Weight};
+use frame_support::{
+    parameter_types,
+    traits::{Everything, SortedMembers},
+    weights::Weight,
+    PalletId,
+};
 
 use frame_system::EnsureRoot;
 use sp_core::{hashing::blake2_128, H256};

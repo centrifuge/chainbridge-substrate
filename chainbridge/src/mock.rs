@@ -257,7 +257,10 @@ impl TestExternalitiesBuilder {
 
         externalities.execute_with(|| {
             // Set and check threshold
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), TEST_RELAYER_VOTE_THRESHOLD));
+            assert_ok!(ChainBridge::set_threshold(
+                Origin::root(),
+                TEST_RELAYER_VOTE_THRESHOLD
+            ));
             assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
             // Add relayers
             assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));

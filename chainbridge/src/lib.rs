@@ -798,6 +798,16 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
             r => Err(T::Origin::from(r)),
         })
     }
+
+    /// Returns an origin capable of passing the `try_origin` check.
+    ///
+    /// ** Should be used for benchmarking only!!! **
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_origin() -> T::Origin {
+        let bridge_id = T::PalletId::get().into_account();
+
+        T::Origin::from(SystemOrigin::Signed(bridge_id))
+    }
 }
 
 /// Helper function to concatenate a chain ID and some bytes to produce a resource ID.
