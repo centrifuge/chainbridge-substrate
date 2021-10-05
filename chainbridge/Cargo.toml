@@ -20,6 +20,9 @@ frame-support = { git = "https://github.com/centrifuge/substrate.git", default-f
 frame-system = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
 
+# Benchmarking primitives
+frame-benchmarking = { git = "https://github.com/centrifuge/substrate",  default-features = false, optional = true, branch = "master" }
+
 [build-dependencies]
 wasm-builder-runner = { version = "3.0.0", package = "substrate-wasm-builder-runner"}
 
@@ -39,5 +42,5 @@ std = [
 ]
 
 runtime-benchmarks = [
-	"frame-benchmarking",
+	"frame-benchmarking"
 ]
