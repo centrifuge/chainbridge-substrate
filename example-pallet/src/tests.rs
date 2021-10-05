@@ -21,9 +21,9 @@ use super::*;
 use crate::{
     self as pallet_example,
     mock::{
-        helpers::*, Balances, ChainBridge, Erc721, Erc721Id, Example, HashId,
-        MockRuntime, NativeTokenId, Origin, ProposalLifetime, TestExternalitiesBuilder,
-        ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C, TEST_RELAYER_VOTE_THRESHOLD,
+        helpers::*, Balances, ChainBridge, Erc721, Erc721Id, Example, HashId, MockRuntime,
+        NativeTokenId, Origin, ProposalLifetime, TestExternalitiesBuilder, ENDOWED_BALANCE,
+        RELAYER_A, RELAYER_B, RELAYER_C, TEST_RELAYER_VOTE_THRESHOLD,
     },
 };
 
@@ -253,13 +253,9 @@ fn transfer() {
             assert_eq!(Balances::free_balance(&bridge_id), ENDOWED_BALANCE - 10);
             assert_eq!(Balances::free_balance(RELAYER_A), ENDOWED_BALANCE + 10);
 
-            assert_events(vec![
-                mock::Event::Balances(pallet_balances::Event::Transfer(
-                    ChainBridge::account_id(),
-                    RELAYER_A,
-                    10,
-                )),
-            ]);
+            assert_events(vec![mock::Event::Balances(
+                pallet_balances::Event::Transfer(ChainBridge::account_id(), RELAYER_A, 10),
+            )]);
         })
 }
 

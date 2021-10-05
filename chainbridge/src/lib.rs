@@ -799,16 +799,14 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
         })
     }
 
-    /// Returns an outer origin capable of passing `try_origin` check.
-	///
-	/// ** Should be used for benchmarking only!!! **
-	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin() -> T::Origin {
+    /// Returns an origin capable of passing the `try_origin` check.
+    ///
+    /// ** Should be used for benchmarking only!!! **
+    #[cfg(feature = "runtime-benchmarks")]
+    fn successful_origin() -> T::Origin {
         let bridge_id = T::PalletId::get().into_account();
 
-        T::Origin::from(
-            SystemOrigin::Signed(bridge_id)
-        )
+        T::Origin::from(SystemOrigin::Signed(bridge_id))
     }
 }
 
