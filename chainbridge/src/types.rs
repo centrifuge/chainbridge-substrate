@@ -21,6 +21,7 @@
 use codec::{Decode, Encode};
 
 use sp_runtime::RuntimeDebug;
+use scale_info::TypeInfo;
 
 // ----------------------------------------------------------------------------
 // Types definition
@@ -31,7 +32,7 @@ pub type DepositNonce = u64;
 pub type ResourceId = [u8; 32];
 
 /// Enumeration of proposal status.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum ProposalStatus {
     Initiated,
     Approved,
@@ -39,7 +40,7 @@ pub enum ProposalStatus {
 }
 
 /// Proposal votes data structure.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ProposalVotes<AccountId, BlockNumber> {
     pub votes_for: Vec<AccountId>,
     pub votes_against: Vec<AccountId>,

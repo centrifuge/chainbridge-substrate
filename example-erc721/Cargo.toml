@@ -10,20 +10,20 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 serde = { version = "1.0.102", optional = true }
 
 # primitives
-sp-io = { git = "https://github.com/centrifuge/substrate", default-features = false, branch = "master" }
-sp-core = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
-sp-runtime = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
-sp-std = { git = "https://github.com/centrifuge/substrate", default-features = false, branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 
 # frame dependencies
-frame-support = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
-frame-system = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 
 # local dependencies
 chainbridge = { path = "../chainbridge" , default-features = false }
 
 [dev-dependencies]
-pallet-balances = { git = "https://github.com/centrifuge/substrate.git", default-features = false, branch = "master" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.12" }
 
 [build-dependencies]
 wasm-builder-runner = { version = "3.0.0", package = "substrate-wasm-builder-runner"}
