@@ -19,10 +19,10 @@
 
 // Substrate primitives
 use codec::{Decode, Encode};
-
+use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-
 use sp_core::U256;
+
 
 // ----------------------------------------------------------------------------
 // Types definition
@@ -30,7 +30,7 @@ use sp_core::U256;
 
 pub type TokenId = U256;
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct Erc721Token {
     pub id: TokenId,
     pub metadata: Vec<u8>,
