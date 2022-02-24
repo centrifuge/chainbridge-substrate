@@ -23,6 +23,9 @@ use codec::{Decode, Encode};
 use sp_runtime::RuntimeDebug;
 use scale_info::TypeInfo;
 
+use sp_std::vec;
+use sp_std::vec::Vec;
+
 // ----------------------------------------------------------------------------
 // Types definition
 // ----------------------------------------------------------------------------
