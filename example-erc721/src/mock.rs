@@ -20,6 +20,7 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
+use frame_support::traits::Everything;
 use frame_support::{parameter_types, weights::Weight};
 use sp_core::{blake2_128, H256};
 use sp_std::convert::{TryFrom, TryInto};
@@ -92,7 +93,7 @@ parameter_types! {
 
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
-    type BaseCallFilter = ();
+    type BaseCallFilter = Everything;
     type Origin = Origin;
     type Call = Call;
     type Index = u64;
@@ -115,6 +116,7 @@ impl frame_system::Config for MockRuntime {
     type BlockLength = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 // Parameterize FRAME balances pallet

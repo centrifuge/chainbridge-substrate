@@ -25,6 +25,7 @@ use crate::{
     self as pallet_chainbridge, constants::DEFAULT_RELAYER_VOTE_THRESHOLD, ChainId,
     Config as ChainBridgePalletConfig, ResourceId, WeightInfo,
 };
+use sp_std::convert::{TryFrom, TryInto};
 
 // Import Substrate primitives and components
 use frame_support::{
@@ -168,6 +169,7 @@ impl frame_system::Config for MockRuntime {
     type BlockLength = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 // Parameterize FRAME balances pallet

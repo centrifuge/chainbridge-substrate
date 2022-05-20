@@ -254,7 +254,11 @@ fn transfer() {
             assert_eq!(Balances::free_balance(RELAYER_A), ENDOWED_BALANCE + 10);
 
             assert_events(vec![mock::Event::Balances(
-                pallet_balances::Event::Transfer(ChainBridge::account_id(), RELAYER_A, 10),
+                pallet_balances::Event::Transfer {
+                    from: ChainBridge::account_id(),
+                    to: RELAYER_A,
+                    amount: 10,
+                },
             )]);
         })
 }
@@ -386,11 +390,11 @@ fn create_sucessful_transfer_proposal() {
                 )),
                 mock::Event::ChainBridge(chainbridge::Event::VoteFor(src_id, prop_id, RELAYER_C)),
                 mock::Event::ChainBridge(chainbridge::Event::ProposalApproved(src_id, prop_id)),
-                mock::Event::Balances(pallet_balances::Event::Transfer(
-                    ChainBridge::account_id(),
-                    RELAYER_A,
-                    10,
-                )),
+                mock::Event::Balances(pallet_balances::Event::Transfer {
+                    from: ChainBridge::account_id(),
+                    to: RELAYER_A,
+                    amount: 10,
+                }),
                 mock::Event::ChainBridge(chainbridge::Event::ProposalSucceeded(src_id, prop_id)),
             ]);
         })

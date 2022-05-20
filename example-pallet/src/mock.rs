@@ -150,6 +150,7 @@ impl frame_system::Config for MockRuntime {
     type BlockLength = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 // Parameterize FRAME balances pallet
@@ -316,6 +317,10 @@ pub(crate) mod helpers {
 
     pub(crate) fn make_transfer_proposal(to: u64, amount: u64) -> Call {
         let resource_id = HashId::get();
-        Call::Example(crate::Call::transfer(to, amount.into(), resource_id))
+        Call::Example(crate::Call::transfer {
+            to,
+            amount: amount.into(),
+            r_id: resource_id,
+        })
     }
 } // end of 'helpers' module
