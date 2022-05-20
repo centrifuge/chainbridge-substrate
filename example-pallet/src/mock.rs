@@ -28,9 +28,9 @@ use frame_support::{
     weights::Weight,
     PalletId,
 };
-
 use frame_system::EnsureRoot;
 use sp_core::{hashing::blake2_128, H256};
+use sp_std::convert::{TryFrom, TryInto};
 
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -308,7 +308,10 @@ pub(crate) mod helpers {
 
     pub(crate) fn make_remark_proposal(hash: H256) -> Call {
         let resource_id = HashId::get();
-        Call::Example(crate::Call::remark(hash, resource_id))
+        Call::Example(crate::Call::remark {
+            hash,
+            r_id: resource_id,
+        })
     }
 
     pub(crate) fn make_transfer_proposal(to: u64, amount: u64) -> Call {

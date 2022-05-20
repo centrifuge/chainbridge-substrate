@@ -21,8 +21,8 @@
 // ----------------------------------------------------------------------------
 
 use frame_support::{parameter_types, weights::Weight};
-
 use sp_core::{blake2_128, H256};
+use sp_std::convert::{TryFrom, TryInto};
 
 use sp_io::TestExternalities;
 
