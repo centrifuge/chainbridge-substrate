@@ -799,7 +799,7 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
         })
     }
 
-    /// Returns an origin capable of passing the `try_origin` check.
+    /// Returns an outer origin capable of passing `try_origin` check.
     ///
     /// ** Should be used for benchmarking only!!! **
     #[cfg(feature = "runtime-benchmarks")]
