@@ -524,7 +524,7 @@ impl<T: Config> Pallet<T> {
     /// Provides an AccountId for the pallet.
     /// This is used both as an origin check and deposit/withdrawal account.
     pub fn account_id() -> T::AccountId {
-        T::PalletId::get().into_account()
+        T::PalletId::get().into_account_truncating()
     }
 
     pub fn ensure_admin(o: T::Origin) -> DispatchResult {
@@ -794,7 +794,7 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
     type Success = T::AccountId;
 
     fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
-        let bridge_id = T::PalletId::get().into_account();
+        let bridge_id = T::PalletId::get().into_account_truncating();
         o.into().and_then(|o| match o {
             SystemOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
             r => Err(T::Origin::from(r)),
@@ -806,7 +806,7 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
     /// ** Should be used for benchmarking only!!! **
     #[cfg(feature = "runtime-benchmarks")]
     fn successful_origin() -> T::Origin {
-        let bridge_id = T::PalletId::get().into_account();
+        let bridge_id = T::PalletId::get().into_account_truncating();
 
         T::Origin::from(SystemOrigin::Signed(bridge_id))
     }
