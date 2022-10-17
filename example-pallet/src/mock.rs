@@ -55,27 +55,27 @@ type Block = frame_system::mocking::MockBlock<MockRuntime>;
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
     fn transfer_hash() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer_native() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer_erc721() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn remark() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn mint_erc721() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 }
 
@@ -119,7 +119,7 @@ impl SortedMembers<u64> for TestUserId {
 // Parameterize FRAME system pallet
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const MaxLocks: u32 = 100;

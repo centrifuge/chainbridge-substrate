@@ -63,39 +63,39 @@ pub type SystemCall = frame_system::Call<MockRuntime>;
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
     fn set_threshold() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn set_resource() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn remove_resource() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn whitelist_chain() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn add_relayer() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn remove_relayer() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn acknowledge_proposal(_: Weight) -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn reject_proposal() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn eval_vote_state(_: Weight) -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 }
 
@@ -138,7 +138,7 @@ impl SortedMembers<u64> for TestUserId {
 // Parameterize FRAME system pallet
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const MaxLocks: u32 = 100;

@@ -26,38 +26,38 @@ use crate::traits::WeightInfo;
 
 impl WeightInfo for () {
     fn set_threshold() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn set_resource() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn remove_resource() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn whitelist_chain() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn add_relayer() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn remove_relayer() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn acknowledge_proposal(dispatch_weight: Weight) -> Weight {
-        (195_000_000 as Weight).saturating_add(dispatch_weight)
+        (Weight::from_ref_time(195_000_000)).saturating_add(dispatch_weight)
     }
 
     fn reject_proposal() -> Weight {
-        195_000_000 as Weight
+        Weight::from_ref_time(195_000_000)
     }
 
     fn eval_vote_state(dispatch_weight: Weight) -> Weight {
-        (195_000_000 as Weight).saturating_add(dispatch_weight)
+        (Weight::from_ref_time(195_000_000)).saturating_add(dispatch_weight)
     }
 }
