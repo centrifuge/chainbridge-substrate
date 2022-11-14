@@ -94,8 +94,8 @@ parameter_types! {
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -103,7 +103,7 @@ impl frame_system::Config for MockRuntime {
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -128,7 +128,7 @@ parameter_types! {
 impl pallet_balances::Config for MockRuntime {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type MaxReserves = ();
@@ -144,7 +144,7 @@ parameter_types! {
 
 // Implement FRAME ERC721 pallet configuration trait for the mock runtime
 impl pallet_example_erc721::Config for MockRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Identifier = Erc721Id;
     type WeightInfo = MockWeightInfo;
 }
