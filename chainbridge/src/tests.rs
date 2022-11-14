@@ -222,7 +222,7 @@ fn asset_transfer_success() {
                 to.clone(),
                 metadata.clone()
             ));
-            assert_events(vec![Event::ChainBridge(
+            assert_events(vec![RuntimeEvent::ChainBridge(
                 pallet::Event::<MockRuntime>::NonFungibleTransfer(
                     dest_id.clone(),
                     2,
@@ -238,7 +238,7 @@ fn asset_transfer_success() {
                 resource_id.clone(),
                 metadata.clone()
             ));
-            assert_events(vec![Event::ChainBridge(
+            assert_events(vec![RuntimeEvent::ChainBridge(
                 pallet::Event::<MockRuntime>::GenericTransfer(
                     dest_id.clone(),
                     3,
@@ -262,7 +262,7 @@ fn asset_transfer_invalid_chain() {
                 RuntimeOrigin::root(),
                 chain_id.clone()
             ));
-            assert_events(vec![Event::ChainBridge(
+            assert_events(vec![RuntimeEvent::ChainBridge(
                 pallet::Event::<MockRuntime>::ChainWhitelisted(chain_id.clone()),
             )]);
 
@@ -328,10 +328,10 @@ fn add_remove_relayer() {
             );
             assert_eq!(ChainBridge::get_relayer_count(), 2);
             assert_events(vec![
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerAdded(RELAYER_A)),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerAdded(RELAYER_B)),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerAdded(RELAYER_C)),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerRemoved(RELAYER_B)),
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerAdded(RELAYER_A)),
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerAdded(RELAYER_B)),
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerAdded(RELAYER_C)),
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerRemoved(RELAYER_B)),
             ]);
         })
 }
@@ -347,7 +347,7 @@ fn create_successful_remark_proposal() {
             let prop_id = 1;
 
             // Create a dummy system remark proposal
-            let proposal = Call::System(SystemCall::remark { remark: vec![10] });
+            let proposal = RuntimeCall::System(SystemCall::remark { remark: vec![10] });
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
@@ -407,19 +407,19 @@ fn create_successful_remark_proposal() {
             assert_eq!(prop, expected);
 
             assert_events(vec![
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
                     src_id, prop_id, RELAYER_A,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteAgainst(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteAgainst(
                     src_id, prop_id, RELAYER_B,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
                     src_id, prop_id, RELAYER_C,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::ProposalApproved(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::ProposalApproved(
                     src_id, prop_id,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::ProposalSucceeded(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::ProposalSucceeded(
                     src_id, prop_id,
                 )),
             ]);
@@ -437,7 +437,7 @@ fn create_unsuccessful_transfer_proposal() {
             let prop_id = 1;
 
             // Create a dummy system remark proposal
-            let proposal = Call::System(SystemCall::remark { remark: vec![11] });
+            let proposal = RuntimeCall::System(SystemCall::remark { remark: vec![11] });
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
@@ -497,16 +497,16 @@ fn create_unsuccessful_transfer_proposal() {
             );
 
             assert_events(vec![
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
                     src_id, prop_id, RELAYER_A,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteAgainst(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteAgainst(
                     src_id, prop_id, RELAYER_B,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteAgainst(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteAgainst(
                     src_id, prop_id, RELAYER_C,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::ProposalRejected(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::ProposalRejected(
                     src_id, prop_id,
                 )),
             ]);
@@ -524,7 +524,7 @@ fn execute_after_threshold_change() {
             let prop_id = 1;
 
             // Create a dummy system remark proposal
-            let proposal = Call::System(SystemCall::remark { remark: vec![11] });
+            let proposal = RuntimeCall::System(SystemCall::remark { remark: vec![11] });
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
@@ -570,14 +570,14 @@ fn execute_after_threshold_change() {
             );
 
             assert_events(vec![
-                Event::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::VoteFor(
                     src_id, prop_id, RELAYER_A,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(1)),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::ProposalApproved(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(1)),
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::ProposalApproved(
                     src_id, prop_id,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::ProposalSucceeded(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::ProposalSucceeded(
                     src_id, prop_id,
                 )),
             ]);
@@ -595,7 +595,7 @@ fn proposal_expires() {
             let prop_id = 1;
 
             // Create a dummy system remark proposal
-            let proposal = Call::System(SystemCall::remark { remark: vec![10] });
+            let proposal = RuntimeCall::System(SystemCall::remark { remark: vec![10] });
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
