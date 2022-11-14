@@ -22,9 +22,9 @@ use crate::{
     self as pallet_chainbridge,
     constants::DEFAULT_RELAYER_VOTE_THRESHOLD,
     mock::{
-        helpers::*, Balances, Call, ChainBridge, Event, MockRuntime, Origin, ProposalLifetime,
-        System, SystemCall, TestExternalitiesBuilder, ENDOWED_BALANCE, RELAYER_A, RELAYER_B,
-        RELAYER_C, TEST_RELAYER_VOTE_THRESHOLD,
+        helpers::*, Balances, ChainBridge, MockRuntime, ProposalLifetime, RuntimeCall,
+        RuntimeEvent, RuntimeOrigin, System, SystemCall, TestExternalitiesBuilder, ENDOWED_BALANCE,
+        RELAYER_A, RELAYER_B, RELAYER_C, TEST_RELAYER_VOTE_THRESHOLD,
     },
     types::{ProposalStatus, ProposalVotes},
 };
@@ -109,20 +109,20 @@ fn setup_resources() {
             let method2 = "Pallet.do_somethingElse".as_bytes().to_vec();
 
             assert_ok!(ChainBridge::set_resource(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 id,
                 method.clone()
             ));
             assert_eq!(ChainBridge::get_resources(id), Some(method));
 
             assert_ok!(ChainBridge::set_resource(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 id,
                 method2.clone()
             ));
             assert_eq!(ChainBridge::get_resources(id), Some(method2));
 
-            assert_ok!(ChainBridge::remove_resource(Origin::root(), id));
+            assert_ok!(ChainBridge::remove_resource(RuntimeOrigin::root(), id));
             assert_eq!(ChainBridge::get_resources(id), None);
         })
 }
@@ -134,16 +134,18 @@ fn whitelist_chain() {
         .execute_with(|| {
             assert!(!ChainBridge::chain_whitelisted(0));
 
-            assert_ok!(ChainBridge::whitelist_chain(Origin::root(), 0));
+            assert_ok!(ChainBridge::whitelist_chain(RuntimeOrigin::root(), 0));
             assert_noop!(
                 ChainBridge::whitelist_chain(
-                    Origin::root(),
+                    RuntimeOrigin::root(),
                     <MockRuntime as pallet_chainbridge::Config>::ChainId::get()
                 ),
                 Error::<MockRuntime>::InvalidChainId
             );
 
-            assert_events(vec![Event::ChainBridge(crate::Event::ChainWhitelisted(0))]);
+            assert_events(vec![RuntimeEvent::ChainBridge(
+                crate::Event::ChainWhitelisted(0),
+            )]);
         })
 }
 
@@ -155,19 +157,19 @@ fn set_get_threshold() {
             assert_eq!(ChainBridge::get_threshold(), DEFAULT_RELAYER_VOTE_THRESHOLD);
 
             assert_ok!(ChainBridge::set_threshold(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 TEST_RELAYER_VOTE_THRESHOLD
             ));
             assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
 
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), 5));
+            assert_ok!(ChainBridge::set_threshold(RuntimeOrigin::root(), 5));
             assert_eq!(ChainBridge::get_threshold(), 5);
 
             assert_events(vec![
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(
                     TEST_RELAYER_VOTE_THRESHOLD,
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(5)),
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::RelayerThresholdChanged(5)),
             ]);
         })
 }
@@ -185,12 +187,12 @@ fn asset_transfer_success() {
             let token_id = vec![1, 2, 3, 4];
 
             assert_ok!(ChainBridge::set_threshold(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 TEST_RELAYER_VOTE_THRESHOLD
             ));
 
             assert_ok!(ChainBridge::whitelist_chain(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 dest_id.clone()
             ));
             assert_ok!(ChainBridge::transfer_fungible(
@@ -201,10 +203,10 @@ fn asset_transfer_success() {
             ));
 
             assert_events(vec![
-                Event::ChainBridge(pallet::Event::<MockRuntime>::ChainWhitelisted(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::ChainWhitelisted(
                     dest_id.clone(),
                 )),
-                Event::ChainBridge(pallet::Event::<MockRuntime>::FungibleTransfer(
+                RuntimeEvent::ChainBridge(pallet::Event::<MockRuntime>::FungibleTransfer(
                     dest_id.clone(),
                     1,
                     resource_id.clone(),
@@ -257,7 +259,7 @@ fn asset_transfer_invalid_chain() {
             let resource_id = [4; 32];
 
             assert_ok!(ChainBridge::whitelist_chain(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 chain_id.clone()
             ));
             assert_events(vec![Event::ChainBridge(
@@ -298,27 +300,30 @@ fn add_remove_relayer() {
         .build()
         .execute_with(|| {
             assert_ok!(ChainBridge::set_threshold(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 TEST_RELAYER_VOTE_THRESHOLD,
             ));
             assert_eq!(ChainBridge::get_relayer_count(), 0);
 
-            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
-            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));
-            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_C));
+            assert_ok!(ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_A));
+            assert_ok!(ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_B));
+            assert_ok!(ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_C));
             assert_eq!(ChainBridge::get_relayer_count(), 3);
 
             // Already exists
             assert_noop!(
-                ChainBridge::add_relayer(Origin::root(), RELAYER_A),
+                ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_A),
                 Error::<MockRuntime>::RelayerAlreadyExists
             );
 
             // Confirm removal
-            assert_ok!(ChainBridge::remove_relayer(Origin::root(), RELAYER_B));
+            assert_ok!(ChainBridge::remove_relayer(
+                RuntimeOrigin::root(),
+                RELAYER_B
+            ));
             assert_eq!(ChainBridge::get_relayer_count(), 2);
             assert_noop!(
-                ChainBridge::remove_relayer(Origin::root(), RELAYER_B),
+                ChainBridge::remove_relayer(RuntimeOrigin::root(), RELAYER_B),
                 Error::<MockRuntime>::RelayerInvalid
             );
             assert_eq!(ChainBridge::get_relayer_count(), 2);
@@ -346,7 +351,7 @@ fn create_successful_remark_proposal() {
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
-                Origin::signed(RELAYER_A),
+                RuntimeOrigin::signed(RELAYER_A),
                 prop_id,
                 src_id,
                 r_id,
@@ -365,7 +370,7 @@ fn create_successful_remark_proposal() {
 
             // Second relayer votes against
             assert_ok!(ChainBridge::reject_proposal(
-                Origin::signed(RELAYER_B),
+                RuntimeOrigin::signed(RELAYER_B),
                 prop_id,
                 src_id,
                 r_id,
@@ -384,7 +389,7 @@ fn create_successful_remark_proposal() {
 
             // Third relayer votes in favour
             assert_ok!(ChainBridge::acknowledge_proposal(
-                Origin::signed(RELAYER_C),
+                RuntimeOrigin::signed(RELAYER_C),
                 prop_id,
                 src_id,
                 r_id,
@@ -436,7 +441,7 @@ fn create_unsuccessful_transfer_proposal() {
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
-                Origin::signed(RELAYER_A),
+                RuntimeOrigin::signed(RELAYER_A),
                 prop_id,
                 src_id,
                 r_id,
@@ -453,7 +458,7 @@ fn create_unsuccessful_transfer_proposal() {
 
             // Second relayer votes against
             assert_ok!(ChainBridge::reject_proposal(
-                Origin::signed(RELAYER_B),
+                RuntimeOrigin::signed(RELAYER_B),
                 prop_id,
                 src_id,
                 r_id,
@@ -470,7 +475,7 @@ fn create_unsuccessful_transfer_proposal() {
 
             // Third relayer votes against
             assert_ok!(ChainBridge::reject_proposal(
-                Origin::signed(RELAYER_C),
+                RuntimeOrigin::signed(RELAYER_C),
                 prop_id,
                 src_id,
                 r_id,
@@ -523,7 +528,7 @@ fn execute_after_threshold_change() {
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
-                Origin::signed(RELAYER_A),
+                RuntimeOrigin::signed(RELAYER_A),
                 prop_id,
                 src_id,
                 r_id,
@@ -539,11 +544,11 @@ fn execute_after_threshold_change() {
             assert_eq!(prop, expected);
 
             // Change threshold
-            assert_ok!(ChainBridge::set_threshold(Origin::root(), 1));
+            assert_ok!(ChainBridge::set_threshold(RuntimeOrigin::root(), 1));
 
             // Attempt to execute
             assert_ok!(ChainBridge::eval_vote_state(
-                Origin::signed(RELAYER_A),
+                RuntimeOrigin::signed(RELAYER_A),
                 prop_id,
                 src_id,
                 Box::new(proposal.clone())
@@ -594,7 +599,7 @@ fn proposal_expires() {
 
             // Create proposal (& vote)
             assert_ok!(ChainBridge::acknowledge_proposal(
-                Origin::signed(RELAYER_A),
+                RuntimeOrigin::signed(RELAYER_A),
                 prop_id,
                 src_id,
                 r_id,
@@ -615,7 +620,7 @@ fn proposal_expires() {
             // Attempt to submit a vote should fail
             assert_noop!(
                 ChainBridge::reject_proposal(
-                    Origin::signed(RELAYER_B),
+                    RuntimeOrigin::signed(RELAYER_B),
                     prop_id,
                     src_id,
                     r_id,
@@ -637,7 +642,7 @@ fn proposal_expires() {
             // eval_vote_state should have no effect
             assert_noop!(
                 ChainBridge::eval_vote_state(
-                    Origin::signed(RELAYER_C),
+                    RuntimeOrigin::signed(RELAYER_C),
                     prop_id,
                     src_id,
                     Box::new(proposal.clone())
@@ -653,8 +658,10 @@ fn proposal_expires() {
             };
             assert_eq!(prop, expected);
 
-            assert_events(vec![mock::Event::ChainBridge(
-                pallet::Event::<MockRuntime>::VoteFor(src_id, prop_id, RELAYER_A),
-            )]);
+            assert_events(vec![mock::RuntimeEvent::ChainBridge(pallet::Event::<
+                MockRuntime,
+            >::VoteFor(
+                src_id, prop_id, RELAYER_A,
+            ))]);
         })
 }
