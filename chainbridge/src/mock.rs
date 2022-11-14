@@ -147,8 +147,8 @@ parameter_types! {
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -156,7 +156,7 @@ impl frame_system::Config for MockRuntime {
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -181,7 +181,7 @@ parameter_types! {
 impl pallet_balances::Config for MockRuntime {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type MaxLocks = ();
@@ -200,8 +200,8 @@ parameter_types! {
 
 // Implement chainbridge pallet configuration trait for the mock runtime
 impl ChainBridgePalletConfig for MockRuntime {
-    type Event = Event;
-    type Proposal = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type Proposal = RuntimeCall;
     type ChainId = MockChainId;
     type PalletId = ChainBridgePalletId;
     type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
@@ -260,18 +260,22 @@ impl TestExternalitiesBuilder {
         externalities.execute_with(|| {
             // Set and check threshold
             assert_ok!(ChainBridge::set_threshold(
-                Origin::root(),
+                RuntimeOrigin::root(),
                 TEST_RELAYER_VOTE_THRESHOLD
             ));
             assert_eq!(ChainBridge::get_threshold(), TEST_RELAYER_VOTE_THRESHOLD);
             // Add relayers
-            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_A));
-            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_B));
-            assert_ok!(ChainBridge::add_relayer(Origin::root(), RELAYER_C));
+            assert_ok!(ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_A));
+            assert_ok!(ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_B));
+            assert_ok!(ChainBridge::add_relayer(RuntimeOrigin::root(), RELAYER_C));
             // Whitelist chain
-            assert_ok!(ChainBridge::whitelist_chain(Origin::root(), src_id));
+            assert_ok!(ChainBridge::whitelist_chain(RuntimeOrigin::root(), src_id));
             // Set and check resource ID mapped to some junk data
-            assert_ok!(ChainBridge::set_resource(Origin::root(), r_id, resource));
+            assert_ok!(ChainBridge::set_resource(
+                RuntimeOrigin::root(),
+                r_id,
+                resource
+            ));
             assert_eq!(ChainBridge::resource_exists(r_id), true);
         });
 
@@ -285,12 +289,12 @@ impl TestExternalitiesBuilder {
 
 pub mod helpers {
 
-    use super::{Event, MockRuntime};
+    use super::{MockRuntime, RuntimeEvent};
 
     // Checks events against the latest. A contiguous set of events must be provided. They must
     // include the most recent event, but do not have to include every past event.
-    pub fn assert_events(mut expected: Vec<Event>) {
-        let mut actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
+    pub fn assert_events(mut expected: Vec<RuntimeEvent>) {
+        let mut actual: Vec<RuntimeEvent> = frame_system::Pallet::<MockRuntime>::events()
             .iter()
             .map(|e| e.event.clone())
             .collect();
