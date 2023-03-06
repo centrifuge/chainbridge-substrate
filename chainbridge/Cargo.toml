@@ -29,24 +29,29 @@ wasm-builder-runner = { version = "3.0.0", package = "substrate-wasm-builder-run
 
 [features]
 default = ["std"]
+
 std = [
 	"codec/std",
 	"serde",
 	"sp-std/std",
 	"sp-runtime/std",
-    "sp-io/std",
-    "sp-core/std",
-    "frame-benchmarking/std",
+  "sp-io/std",
+  "sp-core/std",
+  "frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
 ]
 
 runtime-benchmarks = [
-	"frame-benchmarking"
+	"frame-benchmarking",
+	"frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 ]
+
 try-runtime = [
 	"frame-support/try-runtime",
-    "frame-system/try-runtime",
+  "frame-system/try-runtime",
 	"pallet-balances/try-runtime",
 ]
+
