@@ -805,10 +805,10 @@ impl<T: pallet::Config> EnsureOrigin<T::RuntimeOrigin> for EnsureBridge<T> {
     ///
     /// ** Should be used for benchmarking only!!! **
     #[cfg(feature = "runtime-benchmarks")]
-    fn successful_origin() -> T::RuntimeOrigin {
+    fn try_successful_origin() -> Result<T::RuntimeOrigin, ()> {
         let bridge_id = T::PalletId::get().into_account_truncating();
 
-        T::RuntimeOrigin::from(SystemOrigin::Signed(bridge_id))
+        Ok(T::RuntimeOrigin::from(SystemOrigin::Signed(bridge_id)))
     }
 }
 
