@@ -188,6 +188,10 @@ impl pallet_balances::Config for MockRuntime {
     type MaxReserves = ();
     type ReserveIdentifier = ();
     type WeightInfo = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
+    type HoldIdentifier = ();
+    type FreezeIdentifier = ();
 }
 
 // Parameterize chainbridge pallet
