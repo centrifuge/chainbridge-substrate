@@ -26,14 +26,14 @@ use crate::traits::WeightInfo;
 
 impl WeightInfo for () {
     fn mint() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn transfer() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn burn() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 }

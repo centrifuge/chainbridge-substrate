@@ -79,7 +79,6 @@ pub mod pallet {
     // This structure is a placeholder for traits and functions implementation
     // for the pallet.
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     pub struct Pallet<T>(_);
 
     // ------------------------------------------------------------------------
@@ -130,28 +129,6 @@ pub mod pallet {
     }
 
     // ------------------------------------------------------------------------
-    // Pallet genesis configuration
-    // ------------------------------------------------------------------------
-
-    // The genesis configuration type.
-    #[pallet::genesis_config]
-    pub struct GenesisConfig {}
-
-    // The default value for the genesis config type.
-    #[cfg(feature = "std")]
-    impl Default for GenesisConfig {
-        fn default() -> Self {
-            Self {}
-        }
-    }
-
-    // The build of genesis for the pallet.
-    #[pallet::genesis_build]
-    impl<T: Config> GenesisBuild<T> for GenesisConfig {
-        fn build(&self) {}
-    }
-
-    // ------------------------------------------------------------------------
     // Pallet lifecycle hooks
     // ------------------------------------------------------------------------
 
@@ -185,6 +162,7 @@ pub mod pallet {
 
         /// Transfers an arbitrary hash to a (whitelisted) destination chain.
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_hash())]
+        #[pallet::call_index(0)]
         pub fn transfer_hash(
             origin: OriginFor<T>,
             hash: <T as frame_system::Config>::Hash,
@@ -200,6 +178,7 @@ pub mod pallet {
 
         /// Transfers some amount of the native token to some recipient on a (whitelisted) destination chain.
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_native())]
+        #[pallet::call_index(1)]
         pub fn transfer_native(
             origin: OriginFor<T>,
             amount: BalanceOf<T>,
@@ -227,6 +206,7 @@ pub mod pallet {
 
         /// Transfer a non-fungible token (erc721) to a (whitelisted) destination chain.
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer_erc721())]
+        #[pallet::call_index(2)]
         pub fn transfer_erc721(
             origin: OriginFor<T>,
             recipient: Vec<u8>,
@@ -263,6 +243,7 @@ pub mod pallet {
 
         /// Executes a simple currency transfer using the bridge account as the source
         #[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+        #[pallet::call_index(3)]
         pub fn transfer(
             origin: OriginFor<T>,
             to: <T as frame_system::Config>::AccountId,
@@ -276,6 +257,7 @@ pub mod pallet {
 
         /// This can be called by the bridge to demonstrate an arbitrary call from a proposal.
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remark())]
+        #[pallet::call_index(4)]
         pub fn remark(
             origin: OriginFor<T>,
             hash: <T as frame_system::Config>::Hash,
@@ -288,6 +270,7 @@ pub mod pallet {
 
         /// Allows the bridge to issue new erc721 tokens
         #[pallet::weight(<T as pallet::Config>::WeightInfo::mint_erc721())]
+        #[pallet::call_index(5)]
         pub fn mint_erc721(
             origin: OriginFor<T>,
             recipient: <T as frame_system::Config>::AccountId,

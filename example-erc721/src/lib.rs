@@ -77,7 +77,6 @@ pub mod pallet {
     // This structure is a placeholder for traits and functions implementation
     // for the pallet.
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -187,6 +186,7 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Creates a new token with the given token ID and metadata, and gives ownership to owner
         #[pallet::weight(<T as Config>::WeightInfo::mint())]
+        #[pallet::call_index(0)]
         pub fn mint(
             origin: OriginFor<T>,
             owner: T::AccountId,
@@ -202,6 +202,7 @@ pub mod pallet {
 
         /// Changes ownership of a token sender owns
         #[pallet::weight(<T as Config>::WeightInfo::transfer())]
+        #[pallet::call_index(1)]
         pub fn transfer(
             origin: OriginFor<T>,
             to: T::AccountId,
@@ -216,6 +217,7 @@ pub mod pallet {
 
         /// Remove token from the system
         #[pallet::weight(<T as Config>::WeightInfo::burn())]
+        #[pallet::call_index(2)]
         pub fn burn(origin: OriginFor<T>, id: TokenId) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 

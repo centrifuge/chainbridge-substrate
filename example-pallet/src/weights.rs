@@ -26,26 +26,26 @@ use crate::traits::WeightInfo;
 
 impl WeightInfo for () {
     fn transfer_hash() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn transfer_native() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn transfer_erc721() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn transfer() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn remark() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 
     fn mint_erc721() -> Weight {
-        Weight::from_ref_time(195_000_000)
+        Weight::from_parts(195_000_000, 0)
     }
 }
