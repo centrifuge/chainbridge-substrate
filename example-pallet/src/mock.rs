@@ -28,9 +28,9 @@ use frame_support::{
     weights::Weight,
     PalletId,
 };
-
 use frame_system::EnsureRoot;
 use sp_core::{hashing::blake2_128, H256};
+use sp_std::convert::{TryFrom, TryInto};
 
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -55,27 +55,27 @@ type Block = frame_system::mocking::MockBlock<MockRuntime>;
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
     fn transfer_hash() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer_native() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer_erc721() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn remark() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn mint_erc721() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 }
 
@@ -119,7 +119,7 @@ impl SortedMembers<u64> for TestUserId {
 // Parameterize FRAME system pallet
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const MaxLocks: u32 = 100;
@@ -128,8 +128,8 @@ parameter_types! {
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
-    type Origin = Origin;
-    type Call = Call;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -137,7 +137,7 @@ impl frame_system::Config for MockRuntime {
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -150,6 +150,7 @@ impl frame_system::Config for MockRuntime {
     type BlockLength = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 // Parameterize FRAME balances pallet
@@ -161,7 +162,7 @@ parameter_types! {
 impl pallet_balances::Config for MockRuntime {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type MaxLocks = ();
@@ -180,8 +181,8 @@ parameter_types! {
 
 // Implement chainbridge pallet configuration trait for the mock runtime
 impl chainbridge::Config for MockRuntime {
-    type Event = Event;
-    type Proposal = Call;
+    type RuntimeEvent = RuntimeEvent;
+    type Proposal = RuntimeCall;
     type ChainId = MockChainId;
     type PalletId = ChainBridgePalletId;
     type AdminOrigin = EnsureRoot<Self::AccountId>;
@@ -199,14 +200,14 @@ parameter_types! {
 
 // Implement ERC721 pallet configuration trait for the mock runtime
 impl pallet_example_erc721::Config for MockRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Identifier = Erc721Id;
     type WeightInfo = ();
 }
 
 // Implement example pallet configuration trait for the mock runtime
 impl PalletExampleConfig for MockRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BridgeOrigin = chainbridge::EnsureBridge<MockRuntime>;
     type Currency = Balances;
     type HashId = HashId;
@@ -260,26 +261,26 @@ impl TestExternalitiesBuilder {
 
 pub(crate) mod helpers {
 
-    use super::{Call, Event, HashId, MockRuntime, H256};
+    use super::{HashId, MockRuntime, RuntimeCall, RuntimeEvent, H256};
 
-    fn last_event() -> Event {
+    fn last_event() -> RuntimeEvent {
         frame_system::Pallet::<MockRuntime>::events()
             .pop()
             .map(|e| e.event)
             .expect("Event expected")
     }
 
-    pub fn expect_event<E: Into<Event>>(e: E) {
+    pub fn expect_event<E: Into<RuntimeEvent>>(e: E) {
         assert_eq!(last_event(), e.into());
     }
 
     // Asserts that the event was emitted at some point.
-    pub fn event_exists<E: Into<Event>>(e: E) {
-        let actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
+    pub fn event_exists<E: Into<RuntimeEvent>>(e: E) {
+        let actual: Vec<RuntimeEvent> = frame_system::Pallet::<MockRuntime>::events()
             .iter()
             .map(|e| e.event.clone())
             .collect();
-        let e: Event = e.into();
+        let e: RuntimeEvent = e.into();
         let mut exists = false;
         for evt in actual {
             if evt == e {
@@ -292,8 +293,8 @@ pub(crate) mod helpers {
 
     // Checks events against the latest. A contiguous set of events must be provided. They must
     // include the most recent event, but do not have to include every past event.
-    pub fn assert_events(mut expected: Vec<Event>) {
-        let mut actual: Vec<Event> = frame_system::Pallet::<MockRuntime>::events()
+    pub fn assert_events(mut expected: Vec<RuntimeEvent>) {
+        let mut actual: Vec<RuntimeEvent> = frame_system::Pallet::<MockRuntime>::events()
             .iter()
             .map(|e| e.event.clone())
             .collect();
@@ -306,13 +307,20 @@ pub(crate) mod helpers {
         }
     }
 
-    pub(crate) fn make_remark_proposal(hash: H256) -> Call {
+    pub(crate) fn make_remark_proposal(hash: H256) -> RuntimeCall {
         let resource_id = HashId::get();
-        Call::Example(crate::Call::remark(hash, resource_id))
+        RuntimeCall::Example(crate::Call::remark {
+            hash,
+            r_id: resource_id,
+        })
     }
 
-    pub(crate) fn make_transfer_proposal(to: u64, amount: u64) -> Call {
+    pub(crate) fn make_transfer_proposal(to: u64, amount: u64) -> RuntimeCall {
         let resource_id = HashId::get();
-        Call::Example(crate::Call::transfer(to, amount.into(), resource_id))
+        RuntimeCall::Example(crate::Call::transfer {
+            to,
+            amount: amount.into(),
+            r_id: resource_id,
+        })
     }
 } // end of 'helpers' module

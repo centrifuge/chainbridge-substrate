@@ -72,6 +72,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
 
     // Example pallet type declaration.
     //
@@ -94,11 +95,11 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config + chainbridge::Config + erc721::Config {
         /// Associated type for Event enum
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Specifies the origin check provided by the bridge for calls that can only be called by the bridge pallet
         type BridgeOrigin: EnsureOrigin<
-            <Self as frame_system::Config>::Origin,
+            <Self as frame_system::Config>::RuntimeOrigin,
             Success = <Self as frame_system::Config>::AccountId,
         >;
 

@@ -70,6 +70,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
 
     // Bridge pallet type declaration.
     //
@@ -77,6 +78,7 @@ pub mod pallet {
     // for the pallet.
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     // ------------------------------------------------------------------------
@@ -92,7 +94,7 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// Associated type for Event enum
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Some identifier for this token type, possibly the originating ethereum address.
         /// This is not explicitly used for anything, but may reflect the bridge's notion of resource ID.

@@ -125,9 +125,9 @@ use codec::EncodeLike;
 
 use frame_support::{
     dispatch::DispatchResult,
+    dispatch::GetDispatchInfo,
     ensure,
     traits::{EnsureOrigin, Get},
-    weights::GetDispatchInfo,
     PalletId, Parameter,
 };
 
@@ -162,6 +162,7 @@ pub mod pallet {
     use super::*;
     use frame_support::pallet_prelude::*;
     use frame_system::pallet_prelude::*;
+    use sp_std::convert::TryInto;
 
     // Bridge pallet type declaration.
     //
@@ -169,6 +170,7 @@ pub mod pallet {
     // for the pallet.
     #[pallet::pallet]
     #[pallet::generate_store(pub(super) trait Store)]
+    #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
     // ------------------------------------------------------------------------
@@ -183,14 +185,14 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// Associated type for Event enum
-        type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+        type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Origin used for pallet administration
-        type AdminOrigin: EnsureOrigin<Self::Origin>;
+        type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
         /// Proposed dispatchable call
         type Proposal: Parameter
-            + Dispatchable<Origin = Self::Origin>
+            + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
             + EncodeLike
             + GetDispatchInfo;
 
@@ -522,10 +524,10 @@ impl<T: Config> Pallet<T> {
     /// Provides an AccountId for the pallet.
     /// This is used both as an origin check and deposit/withdrawal account.
     pub fn account_id() -> T::AccountId {
-        T::PalletId::get().into_account()
+        T::PalletId::get().into_account_truncating()
     }
 
-    pub fn ensure_admin(o: T::Origin) -> DispatchResult {
+    pub fn ensure_admin(o: T::RuntimeOrigin) -> DispatchResult {
         T::AdminOrigin::try_origin(o)
             .map(|_| ())
             .or_else(ensure_root)?;
@@ -788,14 +790,14 @@ impl<T: Config> Pallet<T> {
 /// Simple ensure origin for the bridge account
 pub struct EnsureBridge<T>(sp_std::marker::PhantomData<T>);
 
-impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
+impl<T: pallet::Config> EnsureOrigin<T::RuntimeOrigin> for EnsureBridge<T> {
     type Success = T::AccountId;
 
-    fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
-        let bridge_id = T::PalletId::get().into_account();
+    fn try_origin(o: T::RuntimeOrigin) -> Result<Self::Success, T::RuntimeOrigin> {
+        let bridge_id = T::PalletId::get().into_account_truncating();
         o.into().and_then(|o| match o {
             SystemOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
-            r => Err(T::Origin::from(r)),
+            r => Err(T::RuntimeOrigin::from(r)),
         })
     }
 
@@ -803,10 +805,10 @@ impl<T: pallet::Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
     ///
     /// ** Should be used for benchmarking only!!! **
     #[cfg(feature = "runtime-benchmarks")]
-    fn successful_origin() -> T::Origin {
-        let bridge_id = T::PalletId::get().into_account();
+    fn try_successful_origin() -> Result<T::RuntimeOrigin, ()> {
+        let bridge_id = T::PalletId::get().into_account_truncating();
 
-        T::Origin::from(SystemOrigin::Signed(bridge_id))
+        Ok(T::RuntimeOrigin::from(SystemOrigin::Signed(bridge_id)))
     }
 }
 

@@ -20,9 +20,10 @@
 // Module imports and re-exports
 // ----------------------------------------------------------------------------
 
+use frame_support::traits::Everything;
 use frame_support::{parameter_types, weights::Weight};
-
 use sp_core::{blake2_128, H256};
+use sp_std::convert::{TryFrom, TryInto};
 
 use sp_io::TestExternalities;
 
@@ -46,15 +47,15 @@ type Block = frame_system::mocking::MockBlock<MockRuntime>;
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
     fn mint() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn transfer() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 
     fn burn() -> Weight {
-        0 as Weight
+        Weight::from_ref_time(0)
     }
 }
 
@@ -84,7 +85,7 @@ frame_support::construct_runtime!(
 // Parameterize FRAME system pallet
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
+    pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const MaxLocks: u32 = 100;
@@ -92,9 +93,9 @@ parameter_types! {
 
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
-    type BaseCallFilter = ();
-    type Origin = Origin;
-    type Call = Call;
+    type BaseCallFilter = Everything;
+    type RuntimeOrigin = RuntimeOrigin;
+    type RuntimeCall = RuntimeCall;
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
@@ -102,7 +103,7 @@ impl frame_system::Config for MockRuntime {
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
     type Version = ();
@@ -115,6 +116,7 @@ impl frame_system::Config for MockRuntime {
     type BlockLength = ();
     type SS58Prefix = ();
     type OnSetCode = ();
+    type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 // Parameterize FRAME balances pallet
@@ -126,7 +128,7 @@ parameter_types! {
 impl pallet_balances::Config for MockRuntime {
     type Balance = Balance;
     type DustRemoval = ();
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = System;
     type MaxReserves = ();
@@ -142,7 +144,7 @@ parameter_types! {
 
 // Implement FRAME ERC721 pallet configuration trait for the mock runtime
 impl pallet_example_erc721::Config for MockRuntime {
-    type Event = Event;
+    type RuntimeEvent = RuntimeEvent;
     type Identifier = Erc721Id;
     type WeightInfo = MockWeightInfo;
 }
