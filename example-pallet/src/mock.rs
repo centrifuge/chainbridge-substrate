@@ -30,11 +30,11 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use sp_core::{hashing::blake2_128, H256};
+use sp_runtime::BuildStorage;
 use sp_std::convert::{TryFrom, TryInto};
 
 use sp_io::TestExternalities;
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
@@ -49,33 +49,32 @@ use chainbridge::{
 // ----------------------------------------------------------------------------
 
 type Balance = u64;
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<MockRuntime>;
 type Block = frame_system::mocking::MockBlock<MockRuntime>;
 // Implement testing extrinsic weights for the pallet
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
     fn transfer_hash() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn transfer_native() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn transfer_erc721() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn transfer() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn remark() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn mint_erc721() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 }
 
@@ -92,12 +91,9 @@ pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 // Build mock runtime
 frame_support::construct_runtime!(
 
-    pub enum MockRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub enum MockRuntime
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Config<T>, Storage, Event<T>},
         ChainBridge: chainbridge::{Pallet, Call, Storage, Event<T>},
         Erc721: pallet_example_erc721::{Pallet, Call, Storage, Event<T>},
@@ -119,7 +115,7 @@ impl SortedMembers<u64> for TestUserId {
 // Parameterize FRAME system pallet
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
+    pub const MaximumBlockWeight: Weight = Weight::from_parts(1024, 0);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const MaxLocks: u32 = 100;
@@ -130,13 +126,12 @@ impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
+    type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
+    type Block = Block;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -169,6 +164,10 @@ impl pallet_balances::Config for MockRuntime {
     type MaxReserves = ();
     type ReserveIdentifier = ();
     type WeightInfo = ();
+    type RuntimeHoldReason = ();
+    type FreezeIdentifier = ();
+    type MaxHolds = ();
+    type MaxFreezes = ();
 }
 
 // Parameterize chainbridge pallet
@@ -238,8 +237,8 @@ impl TestExternalitiesBuilder {
     pub(crate) fn build(self) -> TestExternalities {
         let bridge_id = ChainBridge::account_id();
 
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<MockRuntime>()
+        let mut storage = frame_system::GenesisConfig::<MockRuntime>::default()
+            .build_storage()
             .unwrap();
 
         // pre-fill balances
