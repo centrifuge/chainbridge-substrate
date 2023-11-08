@@ -169,7 +169,6 @@ pub mod pallet {
     // This structure is a placeholder for traits and functions implementation
     // for the pallet.
     #[pallet::pallet]
-    #[pallet::generate_store(pub(super) trait Store)]
     #[pallet::without_storage_info]
     pub struct Pallet<T>(_);
 
@@ -210,7 +209,7 @@ pub mod pallet {
         type PalletId: Get<PalletId>;
 
         #[pallet::constant]
-        type ProposalLifetime: Get<Self::BlockNumber>;
+        type ProposalLifetime: Get<BlockNumberFor<Self>>;
 
         /// Type for setting initial number of votes required for a proposal to be executed (see [RelayerVoteThreshold] in storage section).
         #[pallet::constant]
@@ -293,7 +292,7 @@ pub mod pallet {
         ChainId,
         Blake2_256,
         (DepositNonce, T::Proposal),
-        ProposalVotes<T::AccountId, T::BlockNumber>,
+        ProposalVotes<T::AccountId, BlockNumberFor<T>>,
         OptionQuery,
     >;
 
@@ -362,6 +361,7 @@ pub mod pallet {
         /// - O(1) lookup and insert
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_threshold())]
+        #[pallet::call_index(0)]
         pub fn set_threshold(origin: OriginFor<T>, threshold: u32) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::set_relayer_threshold(threshold)
@@ -373,6 +373,7 @@ pub mod pallet {
         /// - O(1) write
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::set_resource())]
+        #[pallet::call_index(1)]
         pub fn set_resource(
             origin: OriginFor<T>,
             id: ResourceId,
@@ -391,6 +392,7 @@ pub mod pallet {
         /// - O(1) removal
         /// # </weight>
         #[pallet::weight(<T as Config>::WeightInfo::remove_resource())]
+        #[pallet::call_index(2)]
         pub fn remove_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::unregister_resource(id)
@@ -402,6 +404,7 @@ pub mod pallet {
         /// - O(1) lookup and insert
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::whitelist_chain())]
+        #[pallet::call_index(3)]
         pub fn whitelist_chain(origin: OriginFor<T>, id: ChainId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::whitelist(id)
@@ -413,6 +416,7 @@ pub mod pallet {
         /// - O(1) lookup and insert
         /// # </weight>
         #[pallet::weight(<T as Config>::WeightInfo::add_relayer())]
+        #[pallet::call_index(4)]
         pub fn add_relayer(origin: OriginFor<T>, v: T::AccountId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::register_relayer(v)
@@ -424,6 +428,7 @@ pub mod pallet {
         /// - O(1) lookup and removal
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::remove_relayer())]
+        #[pallet::call_index(5)]
         pub fn remove_relayer(origin: OriginFor<T>, account_id: T::AccountId) -> DispatchResult {
             Self::ensure_admin(origin)?;
             Self::unregister_relayer(account_id)
@@ -438,6 +443,7 @@ pub mod pallet {
         /// - weight of proposed call, regardless of whether execution is performed
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::acknowledge_proposal(call.get_dispatch_info().weight))]
+        #[pallet::call_index(6)]
         pub fn acknowledge_proposal(
             origin: OriginFor<T>,
             nonce: DepositNonce,
@@ -465,6 +471,7 @@ pub mod pallet {
         /// - Fixed, since execution of proposal should not be included
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::reject_proposal())]
+        #[pallet::call_index(7)]
         pub fn reject_proposal(
             origin: OriginFor<T>,
             nonce: DepositNonce,
@@ -495,6 +502,7 @@ pub mod pallet {
         /// - weight of proposed call, regardless of whether execution is performed
         /// # </weight>
         #[pallet::weight(<T as pallet::Config>::WeightInfo::eval_vote_state(proposal.get_dispatch_info().weight))]
+        #[pallet::call_index(8)]
         pub fn eval_vote_state(
             origin: OriginFor<T>,
             nonce: DepositNonce,
