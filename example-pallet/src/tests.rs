@@ -28,8 +28,8 @@ use crate::{
 };
 
 use codec::Encode;
-
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchError};
+use frame_support::{assert_noop, assert_ok};
+use sp_runtime::DispatchError;
 
 use sp_core::{blake2_256, H256};
 

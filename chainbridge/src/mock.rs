@@ -25,6 +25,7 @@ use crate::{
     self as pallet_chainbridge, constants::DEFAULT_RELAYER_VOTE_THRESHOLD, ChainId,
     Config as ChainBridgePalletConfig, ResourceId, WeightInfo,
 };
+use sp_runtime::BuildStorage;
 use sp_std::convert::{TryFrom, TryInto};
 
 // Import Substrate primitives and components
@@ -35,14 +36,13 @@ use frame_support::{
     PalletId,
 };
 
-use frame_system::mocking::{MockBlock, MockUncheckedExtrinsic};
+use frame_system::mocking::MockBlock;
 
 use sp_core::H256;
 
 use sp_io::TestExternalities;
 
 use sp_runtime::{
-    testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
@@ -54,7 +54,6 @@ use sp_runtime::{
 type Balance = u64;
 
 // Runtime mocking types definition
-type UncheckedExtrinsic = MockUncheckedExtrinsic<MockRuntime>;
 type Block = MockBlock<MockRuntime>;
 
 pub type SystemCall = frame_system::Call<MockRuntime>;
@@ -63,39 +62,39 @@ pub type SystemCall = frame_system::Call<MockRuntime>;
 pub struct MockWeightInfo;
 impl WeightInfo for MockWeightInfo {
     fn set_threshold() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn set_resource() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn remove_resource() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn whitelist_chain() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn add_relayer() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn remove_relayer() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn acknowledge_proposal(_: Weight) -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn reject_proposal() -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 
     fn eval_vote_state(_: Weight) -> Weight {
-        Weight::from_ref_time(0)
+        Weight::from_parts(0, 0)
     }
 }
 
@@ -113,12 +112,9 @@ pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 // Build mock runtime
 frame_support::construct_runtime!(
 
-    pub enum MockRuntime where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
+    pub enum MockRuntime
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Event<T>},
     }
@@ -138,7 +134,7 @@ impl SortedMembers<u64> for TestUserId {
 // Parameterize FRAME system pallet
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = Weight::from_ref_time(1024);
+    pub const MaximumBlockWeight: Weight = Weight::from_parts(1024, 0);
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
     pub const MaxLocks: u32 = 100;
@@ -149,13 +145,10 @@ impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
-    type Index = u64;
-    type BlockNumber = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type DbWeight = ();
@@ -170,6 +163,8 @@ impl frame_system::Config for MockRuntime {
     type SS58Prefix = ();
     type OnSetCode = ();
     type MaxConsumers = frame_support::traits::ConstU32<16>;
+    type Nonce = u64;
+    type Block = Block;
 }
 
 // Parameterize FRAME balances pallet
@@ -190,8 +185,8 @@ impl pallet_balances::Config for MockRuntime {
     type WeightInfo = ();
     type MaxHolds = ();
     type MaxFreezes = ();
-    type HoldIdentifier = ();
     type FreezeIdentifier = ();
+    type RuntimeHoldReason = ();
 }
 
 // Parameterize chainbridge pallet
@@ -236,8 +231,8 @@ impl TestExternalitiesBuilder {
     pub(crate) fn build(self) -> TestExternalities {
         let bridge_id = ChainBridge::account_id();
 
-        let mut storage = frame_system::GenesisConfig::default()
-            .build_storage::<MockRuntime>()
+        let mut storage = frame_system::GenesisConfig::<MockRuntime>::default()
+            .build_storage()
             .unwrap();
 
         // pre-fill balances
