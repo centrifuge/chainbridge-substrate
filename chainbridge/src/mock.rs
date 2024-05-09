@@ -111,7 +111,6 @@ pub(crate) const TEST_RELAYER_VOTE_THRESHOLD: u32 = 2;
 
 // Build mock runtime
 frame_support::construct_runtime!(
-
     pub enum MockRuntime
     {
         System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -143,6 +142,7 @@ parameter_types! {
 // Implement FRAME system pallet configuration trait for the mock runtime
 impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
+    type RuntimeTask = ();
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
     type Hash = H256;
@@ -183,10 +183,10 @@ impl pallet_balances::Config for MockRuntime {
     type MaxReserves = ();
     type ReserveIdentifier = ();
     type WeightInfo = ();
-    type MaxHolds = ();
     type MaxFreezes = ();
     type FreezeIdentifier = ();
     type RuntimeHoldReason = ();
+    type RuntimeFreezeReason = ();
 }
 
 // Parameterize chainbridge pallet

@@ -91,6 +91,7 @@ impl frame_system::Config for MockRuntime {
     type BaseCallFilter = Everything;
     type RuntimeOrigin = RuntimeOrigin;
     type RuntimeCall = RuntimeCall;
+    type RuntimeTask = ();
     type Nonce = u64;
     type Hash = H256;
     type Hashing = BlakeTwo256;
@@ -131,8 +132,8 @@ impl pallet_balances::Config for MockRuntime {
     type WeightInfo = ();
     type RuntimeHoldReason = ();
     type FreezeIdentifier = ();
-    type MaxHolds = ();
     type MaxFreezes = ();
+    type RuntimeFreezeReason = ();
 }
 
 // Parameterize ERC721 pallet
